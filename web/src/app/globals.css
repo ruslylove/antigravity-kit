@@ -30,16 +30,11 @@
   --warning: var(--color-amber-500);
   --warning-foreground: var(--color-amber-700);
 
-  /* Kinetic Arboretum Tokens */
-  --arboretum-primary: #00450d;
-  --arboretum-secondary: #466270;
-  --arboretum-tertiary: #264300;
-  --arboretum-bg: #f3faff;
-  --arboretum-on-bg: #071e27;
-  --arboretum-surface: #dbf1fe;
-  --arboretum-surface-low: #e6f6ff;
-  --arboretum-surface-lowest: #ffffff;
-  --arboretum-glass: rgba(207, 230, 242, 0.6);
+  /* SIAM EV Group Tokens */
+  --siam-blue: #1b458f;
+  --siam-green: #3bae49;
+  --siam-bg: #f5faff;
+  --siam-glass: rgba(27, 69, 143, 0.4);
 }
 
 @theme inline {
@@ -72,15 +67,10 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
 
-  --color-arb-primary: var(--arboretum-primary);
-  --color-arb-secondary: var(--arboretum-secondary);
-  --color-arb-tertiary: var(--arboretum-tertiary);
-  --color-arb-bg: var(--arboretum-bg);
-  --color-arb-on-bg: var(--arboretum-on-bg);
-  --color-arb-surface: var(--arboretum-surface);
-  --color-arb-surface-low: var(--arboretum-surface-low);
-  --color-arb-surface-lowest: var(--arboretum-surface-lowest);
-  --color-arb-glass: var(--arboretum-glass);
+  --color-siam-blue: var(--siam-blue);
+  --color-siam-green: var(--siam-green);
+  --color-siam-bg: var(--siam-bg);
+  --color-siam-glass: var(--siam-glass);
 
   @keyframes skeleton {
     to {
@@ -142,7 +132,7 @@ body {
 
 @layer utilities {
   .glass {
-    @apply bg-arb-glass backdrop-blur-xl border border-white/20 shadow-xl;
+    @apply bg-siam-glass backdrop-blur-xl border border-white/20 shadow-xl;
   }
 
   .no-line {
@@ -150,7 +140,7 @@ body {
   }
 
   .glass-sidebar {
-    background: rgba(6, 17, 20, 0.85);
+    background: rgba(8, 19, 38, 0.85);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
   }
@@ -172,10 +162,10 @@ body {
 }
 /* Leaflet Overrides */
 .leaflet-container {
-  background-color: #0c1a1f !important;
+  background-color: #081326 !important;
 }
 .leaflet-popup-content-wrapper {
-  background: rgba(6, 17, 20, 0.9) !important;
+  background: rgba(8, 19, 38, 0.9) !important;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -184,7 +174,7 @@ body {
   padding: 0 !important;
 }
 .leaflet-popup-tip {
-  background: rgba(6, 17, 20, 0.9) !important;
+  background: rgba(8, 19, 38, 0.9) !important;
 }
 .leaflet-popup-content {
   margin: 0 !important;

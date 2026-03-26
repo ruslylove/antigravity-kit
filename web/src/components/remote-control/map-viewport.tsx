@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useImperativeHandle, forwardRef } from "react";
+import { Plus, Minus, Target } from "lucide-react";
 import dynamic from "next/dynamic";
 import "leaflet/dist/leaflet.css";
 
@@ -17,6 +18,8 @@ interface Station {
   lng: number;
   status: "Available" | "Charging" | "Faulted" | string;
   powerLimit: string;
+  powerOutput?: number; // Added for telemetry
+  currentMeter?: number; // Added for telemetry
 }
 
 interface MapViewportProps {
@@ -48,8 +51,8 @@ export const MapViewport = forwardRef(({ stations, loading, selectedStationId, o
 
   if (!L || loading) {
     return (
-      <div className="absolute inset-0 z-0 bg-[#0c1a1f] flex items-center justify-center">
-        <div className="w-10 h-10 border-2 border-white/10 border-t-arb-primary rounded-full animate-spin" />
+      <div className="absolute inset-0 z-0 bg-[#081326] flex items-center justify-center">
+        <div className="w-10 h-10 border-2 border-white/10 border-t-siam-green rounded-full animate-spin" />
       </div>
     );
   }
@@ -85,14 +88,14 @@ export const MapViewport = forwardRef(({ stations, loading, selectedStationId, o
   };
 
   return (
-    <div className="absolute inset-0 z-0 bg-[#0c1a1f]">
+    <div className="absolute inset-0 z-0 bg-[#081326]">
       <MapContainer 
         center={center} 
         zoom={13} 
         scrollWheelZoom={true} 
         zoomControl={false}
         className="w-full h-full grayscale-[0.2] brightness-[0.75]"
-        style={{ background: '#0c1a1f' }}
+        style={{ background: '#081326' }}
         ref={setMap}
       >
         <TileLayer
@@ -109,25 +112,32 @@ export const MapViewport = forwardRef(({ stations, loading, selectedStationId, o
               icon={createCustomIcon(station.status, isSelected)}
               eventHandlers={{
                 click: () => onStationClick?.(station.id),
-                dblclick: () => {
-                  map?.flyTo([station.lat, station.lng], 16, {
-                    duration: 1.5,
-                    easeLinearity: 0.25
-                  });
-                }
               }}
             >
               <Popup className="glass-popup">
-                <div className="p-3 space-y-1.5 min-w-[140px]">
-                   <h4 className="text-[11px] font-black tracking-widest text-[#00e676] uppercase flex items-center gap-1.5">
-                     <span className="w-1.5 h-1.5 rounded-full bg-arb-primary shadow-[0_0_8px_#00e676]"></span>
-                     {station.id.replace('station-', '').toUpperCase()}
-                   </h4>
-                   <p className="text-[12px] text-white font-black uppercase tracking-tight leading-tight">{station.name}</p>
-                   <div className="pt-1.5 border-t border-white/10 flex justify-between items-center">
-                     <span className="text-[9px] font-bold text-white/50 uppercase">Power</span>
-                     <span className="text-[10px] font-black text-arb-primary">{station.powerLimit}</span>
-                   </div>
+                <div className="bg-[#050b14]/90 backdrop-blur-md text-white p-3 rounded-xl border border-white/10 min-w-[160px] shadow-2xl">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[8px] font-black text-white/40 uppercase tracking-widest">{station.id.replace('station-', '').toUpperCase()}</span>
+                    <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase ${station.status === 'Available' ? 'bg-siam-green text-black' : 'bg-blue-500 text-white'}`}>
+                      {station.status}
+                    </span>
+                  </div>
+                  <h4 className="text-[11px] font-bold text-white mb-2 uppercase leading-snug">{station.name}</h4>
+                  
+                  <div className="space-y-2 border-t border-white/10 pt-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[8px] text-white/40 font-black uppercase tracking-tight">Live Power</span>
+                      <span className="text-[10px] font-black text-siam-green">{(station.powerOutput || 0).toFixed(1)} kW</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[8px] text-white/40 font-black uppercase tracking-tight">Energy Used</span>
+                      <span className="text-[10px] font-black text-white">{(station.currentMeter || 0).toFixed(1)} kWh</span>
+                    </div>
+                    <div className="flex justify-between items-center opacity-60">
+                      <span className="text-[8px] text-white/40 font-black uppercase tracking-tight">Max Limit</span>
+                      <span className="text-[9px] font-bold text-white/80">{station.powerLimit}</span>
+                    </div>
+                  </div>
                 </div>
               </Popup>
             </Marker>
@@ -136,15 +146,51 @@ export const MapViewport = forwardRef(({ stations, loading, selectedStationId, o
       </MapContainer>
 
       {/* Map Content Label (Overlay) */}
-      <div className="absolute top-24 left-1/2 -translate-x-1/2 glass px-6 py-2 rounded-full z-[1001] pointer-events-none transition-all duration-500">
-        <span className="text-[10px] font-manrope font-black uppercase tracking-[0.3em] text-arb-primary/95 drop-shadow-[0_0_5px_rgba(0,230,118,0.3)]">
+      <div className="absolute top-6 left-6 z-[1001] pointer-events-none hidden md:flex flex-col gap-1.5 backdrop-blur-md bg-black/40 p-4 rounded-xl border border-white/10 shadow-3xl">
+        <div className="flex items-center gap-2">
+          <div className="w-1.5 h-1.5 rounded-full bg-siam-green animate-pulse" />
+          <span className="text-[10px] font-black text-white/50 tracking-[0.2em] uppercase">Status Check: Normal</span>
+        </div>
+        <span className="text-[10px] font-manrope font-black uppercase tracking-[0.3em] text-siam-green/95 drop-shadow-[0_0_5px_rgba(0,230,118,0.3)]">
           Bangkok Operational Hub • Google Satellite
         </span>
       </div>
 
-      <div className="absolute bottom-6 left-6 flex flex-col gap-1 z-[1001] pointer-events-none">
+      <div className="absolute bottom-6 left-6 z-[1001] pointer-events-none hidden md:flex flex-col gap-1.5">
         <div className="w-24 h-[2px] bg-white/60" />
         <span className="text-[10px] font-black text-white/80 tracking-widest uppercase">Live Operational View</span>
+      </div>
+
+      {/* Manual Zoom Controls */}
+      <div className="absolute right-6 top-1/2 -translate-y-1/2 z-[1001] flex flex-col gap-2">
+        <button 
+          onClick={() => map?.zoomIn()}
+          className="w-10 h-10 glass rounded-xl flex items-center justify-center border border-white/10 text-white/60 hover:text-white hover:bg-white/10 active:scale-90 transition-all shadow-2xl"
+          title="Zoom In"
+        >
+          <Plus size={18} />
+        </button>
+        
+        <button 
+          onClick={() => {
+            if (map && stations.length > 0 && L) {
+              const bounds = L.latLngBounds(stations.map(s => [s.lat, s.lng]));
+              map.flyToBounds(bounds, { padding: [50, 50], duration: 1.5 });
+            }
+          }}
+          className="w-10 h-10 glass rounded-xl flex items-center justify-center border border-white/10 text-siam-green hover:bg-white/10 active:scale-90 transition-all shadow-2xl"
+          title="Zoom to All Nodes"
+        >
+          <Target size={18} />
+        </button>
+
+        <button 
+          onClick={() => map?.zoomOut()}
+          className="w-10 h-10 glass rounded-xl flex items-center justify-center border border-white/10 text-white/60 hover:text-white hover:bg-white/10 active:scale-90 transition-all shadow-2xl"
+          title="Zoom Out"
+        >
+          <Minus size={18} />
+        </button>
       </div>
       
       <style jsx global>{`
