@@ -25,7 +25,7 @@ export interface Station {
   lat: number;
   lng: number;
   status: "Available" | "Charging" | "Faulted" | string;
-  powerLimit: string;
+  powerLimit: number;
   socketStatus?: string;
   currentMeter?: number;
   powerOutput?: number;
@@ -54,7 +54,7 @@ export default function RemoteControlPage() {
       faulted: stations.filter(s => s.status === "Faulted").length,
       totalEnergy: stations.reduce((acc, s) => acc + (s.currentMeter || 0), 0),
       totalPower: stations.reduce((acc, s) => acc + (s.powerOutput || 0), 0),
-      totalCapacity: stations.reduce((acc, s) => acc + parseInt(s.powerLimit || "0"), 0),
+      totalCapacity: stations.reduce((acc, s) => acc + (s.powerLimit || 0), 0),
     }
   }, [stations]);
   
@@ -68,13 +68,17 @@ export default function RemoteControlPage() {
         const response = await fetch(fetchUrl);
         if (!response.ok) throw new Error("Failed to fetch stations");
         const data = await response.json();
-        setStations(data);
+        const mappedData = data.map((s: any) => ({
+          ...s,
+          powerLimit: typeof s.powerLimit === 'string' ? parseInt(s.powerLimit) || 0 : s.powerLimit || 0
+        }));
+        setStations(mappedData);
         setIsApiHealthy(true);
         
         // Auto-select the first charging station if none selected
-        if (!selectedStationId && data.length > 0) {
-          const firstCharging = data.find((s: Station) => s.status === "Charging" );
-          setSelectedStationId(firstCharging ? firstCharging.id : data[0].id);
+        if (!selectedStationId && mappedData.length > 0) {
+          const firstCharging = mappedData.find((s: Station) => s.status === "Charging" );
+          setSelectedStationId(firstCharging ? firstCharging.id : mappedData[0].id);
         }
       } catch (error) {
         console.error("OCPP API Error:", error);

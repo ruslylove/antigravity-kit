@@ -95,7 +95,7 @@ global.set("ocpp_stations", [
     status: "Available",
     currentMeter: 0,
     powerOutput: 0,
-    powerLimit: "120"
+    powerLimit: 120
   },
   {
     id: "station-bkk-002",
@@ -105,7 +105,7 @@ global.set("ocpp_stations", [
     status: "Charging",
     currentMeter: 42.15,
     powerOutput: 68.4,
-    powerLimit: "150"
+    powerLimit: 150
   }
 ]);
 return msg;
@@ -160,7 +160,7 @@ return msg;
 \end{itemize}
 
 \subsection{4. Incoming OCPP: Handling MeterValues}
-When a physical charger sends a \texttt{MeterValues} message, Node-RED must intercept this payload and update the global \texttt{ocpp\_stations} store so the UI reflects the live energy, power metrics, and capacity (\texttt{powerLimit}) immediately.
+When a physical charger sends a \texttt{MeterValues} message, Node-RED must intercept this payload and update the global \texttt{ocpp\_stations} store so the UI reflects the live energy, power metrics, and capacity (\texttt{powerLimit} as a numeric integer) immediately.
 
 \begin{itemize}
     \item \textbf{OCPP Server Node}: Listens for incoming \texttt{MeterValues} actions from the active WebSocket connections.

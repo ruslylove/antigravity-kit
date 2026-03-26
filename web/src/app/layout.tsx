@@ -33,9 +33,12 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Antigravity Kit - AI Agent Capability Expansion Toolkit",
-  description: "A comprehensive collection of skills, rules, and workflows to supercharge AI coding assistants for Antigravity. 35+ skills, 57 UI Styles, production-ready workflows.",
-  metadataBase: new URL("https://antigravity-kit.vercel.app/"),
+  title: "Siam EV - CSMS",
+  description: "Siam EV - Charging Station Management System. High-performance operational hub for Bangkok's charging network.",
+  metadataBase: new URL("https://siam-ev-hub.vercel.app/"),
+  icons: {
+    icon: "/assets/siamev_logo.jpg",
+  },
   robots: {
     index: true,
     follow: true,
@@ -43,9 +46,9 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://antigravity-kit.vercel.app/",
-    siteName: "Antigravity Kit",
-    images: ["/images/logo.png"],
+    url: "https://siam-ev-hub.vercel.app/",
+    siteName: "Siam EV - CSMS",
+    images: ["/assets/siamev_logo.jpg"],
   },
 };
 

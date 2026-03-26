@@ -92,7 +92,7 @@ export function NodesTableView({ stations, selectedStationId, onStationClick }: 
                           <div className="w-16 h-1.5 bg-white/5 rounded-full mt-2 overflow-hidden">
                              <div 
                                className="h-full bg-siam-green rounded-full" 
-                               style={{ width: `${Math.min(100, ((station.powerOutput || 0) / parseInt(station.powerLimit || "22")) * 100)}%` }}
+                               style={{ width: `${Math.min(100, ((station.powerOutput || 0) / (station.powerLimit || 22)) * 100)}%` }}
                              />
                           </div>
                        </div>

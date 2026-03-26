@@ -17,7 +17,7 @@ interface Station {
   lat: number;
   lng: number;
   status: "Available" | "Charging" | "Faulted" | string;
-  powerLimit: string;
+  powerLimit: number;
   powerOutput?: number; // Added for telemetry
   currentMeter?: number; // Added for telemetry
 }
