@@ -1,0 +1,228 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+\lstset{style=mystyle}
+
+\title{\textbf{EV Station Hub}\\ Node-RED OCPP Backend Implementation}
+\author{Ruslee Sutthaweekul}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Overview}
+This document outlines the architecture and implementation steps for creating a Node-RED based backend to serve as an Open Charge Point Protocol (OCPP) server. This server will provide live telemetry data to the Charger-UI and accept remote control commands, specifically the \texttt{Remote Stop} command from the frontend.
+
+\section{Architecture}
+The architecture consists of:
+\begin{enumerate}
+    \item \textbf{Node-RED}: Acts as the Central System (CS) handling OCPP connections and REST API requests.
+    \item \textbf{Frontend (Charger-UI)}: Consumes REST endpoints to display data and send commands.
+    \item \textbf{Global Store}: Node-RED's global context holds the real-time state of all charging stations.
+\end{enumerate}
+
+\vspace{0.5cm}
+
+\tikzstyle{box} = [rectangle, rounded corners, minimum width=3.5cm, minimum height=1.2cm, text centered, text width=3cm, draw=black, thick, fill=gray!10]
+\tikzstyle{arrow} = [thick,->,>=stealth]
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[node distance=3cm]
+
+% Nodes
+\node (ui) [box, fill=blue!10] {\textbf{Charger-UI}\\ (Next.js/React)};
+\node (nodered) [box, below of=ui, fill=purple!10] {\textbf{Node-RED}\\ (Central System)};
+\node (store) [box, right of=nodered, xshift=2.5cm, fill=yellow!10] {\textbf{Global Store}\\ (In-Memory/DB)};
+\node (charger) [box, below of=nodered, fill=orange!10] {\textbf{EV Chargers}\\ (Physical Units)};
+
+% Arrows
+\draw [arrow] ([xshift=-0.5cm]ui.south) -- node[anchor=east] {\small REST/WS} ([xshift=-0.5cm]nodered.north);
+\draw [arrow] ([xshift=0.5cm]nodered.north) -- node[anchor=west] {\small JSON Payload} ([xshift=0.5cm]ui.south);
+
+\draw [arrow] ([yshift=0.2cm]nodered.east) -- node[anchor=south] {\small Write State} ([yshift=0.2cm]store.west);
+\draw [arrow] ([yshift=-0.2cm]store.west) -- node[anchor=north] {\small Read State} ([yshift=-0.2cm]nodered.east);
+
+\draw [arrow] ([xshift=-0.5cm]charger.north) -- node[anchor=east] {\small OCPP Telemetry} ([xshift=-0.5cm]nodered.south);
+\draw [arrow] ([xshift=0.5cm]nodered.south) -- node[anchor=west] {\small OCPP Commands} ([xshift=0.5cm]charger.north);
+
+\end{tikzpicture}
+\caption{System Architecture Flow Diagram}
+\end{figure}
+
+\section{Node-RED Flow Configuration}
+
+\subsection{1. Initializing the Station State}
+Create an \texttt{Inject} node set to trigger once at startup, connected to a \texttt{Function} node to initialize the state:
+
+\begin{lstlisting}[caption=Initialize Stations]
+global.set("ocpp_stations", [
+  {
+    id: "station-bkk-001",
+    name: "Siam Paragon Hub",
+    lat: 13.7462,
+    lng: 100.5347,
+    status: "Available",
+    currentMeter: 0,
+    powerOutput: 0
+  },
+  {
+    id: "station-bkk-002",
+    name: "Sukhumvit 21 Fast",
+    lat: 13.7410,
+    lng: 100.5600,
+    status: "Charging",
+    currentMeter: 42.15,
+    powerOutput: 68.4
+  }
+]);
+return msg;
+\end{lstlisting}
+
+\subsection{2. REST API: Get Station Data}
+To allow the UI to fetch the latest telemetry:
+\begin{itemize}
+    \item \textbf{HTTP In Node}: Method \texttt{GET}, URL \texttt{/api/ocpp/stations}
+    \item \textbf{Function Node}: 
+\begin{lstlisting}
+msg.payload = global.get("ocpp_stations");
+return msg;
+\end{lstlisting}
+    \item \textbf{HTTP Response Node}: Returns the JSON payload.
+\end{itemize}
+
+\subsection{3. REST API: Remote Stop Command}
+To accept a "Stop Charging" command from the UI:
+\begin{itemize}
+    \item \textbf{HTTP In Node}: Method \texttt{POST}, URL \texttt{/api/ocpp/command/stop}
+    \item \textbf{Function Node}: Process the incoming request body (e.g., \texttt{\{"stationId": "station-bkk-002"\}})
+\begin{lstlisting}[caption=Handle Remote Stop Request]
+const stationId = msg.payload.stationId;
+let stations = global.get("ocpp_stations") || [];
+
+const targetStation = stations.find(s => s.id === stationId);
+if (targetStation && targetStation.status === "Charging") {
+    // 1. Update internal simulated state
+    targetStation.status = "Available";
+    targetStation.powerOutput = 0;
+    
+    // 2. Real Hardware Integration Point
+    // Format OCPP RemoteStopTransaction payload:
+    const ocppMsg = {
+        payload: {
+            command: "RemoteStopTransaction",
+            transactionId: targetStation.currentTransactionId // Tracked in state
+        }
+    };
+    // This ocppMsg would be sent to the OCPP out node
+    
+    global.set("ocpp_stations", stations);
+    msg.payload = { success: true, message: "Stop command accepted" };
+} else {
+    msg.payload = { success: false, error: "Station not charging or not found" };
+    msg.statusCode = 400;
+}
+return msg;
+\end{lstlisting}
+    \item \textbf{HTTP Response Node}: Returns the success/error response to the UI.
+\end{itemize}
+
+\subsection{4. Incoming OCPP: Handling MeterValues}
+When a physical charger sends a \texttt{MeterValues} message, Node-RED must intercept this payload and update the global \texttt{ocpp\_stations} store so the UI reflects the live energy and power metrics immediately.
+
+\begin{itemize}
+    \item \textbf{OCPP Server Node}: Listens for incoming \texttt{MeterValues} actions from the active WebSocket connections.
+    \item \textbf{Function Node}: Parse the nested array of sampled values to extract energy and power parameters:
+\begin{lstlisting}[caption=Process Incoming MeterValues]
+// Payload structure depends on node-red-contrib-ocpp formatting
+const stationId = msg.chargeBoxIdentity; 
+const meterData = msg.payload.meterValue;
+
+let stations = global.get("ocpp_stations") || [];
+const targetStation = stations.find(s => s.id === stationId);
+
+if (targetStation && meterData && meterData.length > 0) {
+    // Extract the latest sampled values
+    const samples = meterData[0].sampledValue;
+    
+    samples.forEach(sample => {
+        if (sample.measurand === "Energy.Active.Import.Register") {
+            // Assuming the charger sends data in Wh; converting to kWh
+            targetStation.currentMeter = parseFloat(sample.value) / 1000;
+        } else if (sample.measurand === "Power.Active.Import") {
+            // Assuming the charger sends data in W; converting to kW
+            targetStation.powerOutput = parseFloat(sample.value) / 1000;
+        }
+    });
+
+    // Save the freshly updated state back to the global store
+    global.set("ocpp_stations", stations);
+}
+return msg;
+\end{lstlisting}
+    \item \textbf{Optional - Broadcast Node}: If you are using WebSockets to pass data to the Next.js UI instead of REST polling, you can link this Function node to a WebSocket Out node to push live updates directly to the map.
+\end{itemize}
+
+\section{Connecting Frontend to Node-RED}
+
+In the React/Next.js UI, bind the \textbf{Stop Charging} button to the new endpoint:
+
+\begin{lstlisting}[caption=Frontend Integration (React)]
+const handleStopCharging = async (stationId) => {
+    try {
+        const response = await fetch("http://localhost:1880/api/ocpp/command/stop", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ stationId })
+        });
+        
+        if (response.ok) {
+            console.log("Charging stopped successfully");
+            // Optionally manually trigger data refresh
+        }
+    } catch (error) {
+        console.error("Failed to send remote command", error);
+    }
+};
+\end{lstlisting}
+
+\section{Real Hardware Integration (Optional)}
+To connect real physical chargers:
+\begin{enumerate}
+    \item Install the \texttt{node-red-contrib-ocpp} node package.
+    \item Use the \texttt{OCPP Server} node to accept incoming WebSocket connections.
+    \item Route incoming \texttt{MeterValues} and \texttt{StatusNotification} messages to update the \texttt{global.get("ocpp\_stations")} records.
+    \item Use the \texttt{OCPP Server} command functionality to emit the \texttt{RemoteStopTransaction} directly to the specified charge point when the REST POST endpoint is triggered.
+\end{enumerate}
+
+\end{document}

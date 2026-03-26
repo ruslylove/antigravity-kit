@@ -29,6 +29,17 @@
   --success-foreground: var(--color-emerald-700);
   --warning: var(--color-amber-500);
   --warning-foreground: var(--color-amber-700);
+
+  /* Kinetic Arboretum Tokens */
+  --arboretum-primary: #00450d;
+  --arboretum-secondary: #466270;
+  --arboretum-tertiary: #264300;
+  --arboretum-bg: #f3faff;
+  --arboretum-on-bg: #071e27;
+  --arboretum-surface: #dbf1fe;
+  --arboretum-surface-low: #e6f6ff;
+  --arboretum-surface-lowest: #ffffff;
+  --arboretum-glass: rgba(207, 230, 242, 0.6);
 }
 
 @theme inline {
@@ -60,6 +71,16 @@
   --color-border: var(--border);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
+
+  --color-arb-primary: var(--arboretum-primary);
+  --color-arb-secondary: var(--arboretum-secondary);
+  --color-arb-tertiary: var(--arboretum-tertiary);
+  --color-arb-bg: var(--arboretum-bg);
+  --color-arb-on-bg: var(--arboretum-on-bg);
+  --color-arb-surface: var(--arboretum-surface);
+  --color-arb-surface-low: var(--arboretum-surface-low);
+  --color-arb-surface-lowest: var(--arboretum-surface-lowest);
+  --color-arb-glass: var(--arboretum-glass);
 
   @keyframes skeleton {
     to {
@@ -117,4 +138,58 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-arb-glass backdrop-blur-xl border border-white/20 shadow-xl;
+  }
+
+  .no-line {
+    @apply border-none shadow-none ring-0;
+  }
+
+  .glass-sidebar {
+    background: rgba(6, 17, 20, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  .glass-panel {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+/* Leaflet Overrides */
+.leaflet-container {
+  background-color: #0c1a1f !important;
+}
+.leaflet-popup-content-wrapper {
+  background: rgba(6, 17, 20, 0.9) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px !important;
+  color: white !important;
+  padding: 0 !important;
+}
+.leaflet-popup-tip {
+  background: rgba(6, 17, 20, 0.9) !important;
+}
+.leaflet-popup-content {
+  margin: 0 !important;
+}
+.custom-leaflet-marker {
+  background: transparent !important;
+  border: none !important;
 }
