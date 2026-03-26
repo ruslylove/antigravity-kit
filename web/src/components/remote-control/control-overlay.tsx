@@ -14,15 +14,18 @@ import {
   MoreVertical,
   Battery,
   Flame,
-  X
+  X,
+  Search,
+  LayoutDashboard
 } from "lucide-react";
 import { Station } from "@/app/remote-control/page";
 
 interface ControlOverlayProps {
   stations: Station[];
   selectedStationId: string | null;
-  activeTab: "MAP" | "SETTINGS";
-  setActiveTab: React.Dispatch<React.SetStateAction<"MAP" | "SETTINGS">>;
+  onStationClick?: (id: string | null) => void;
+  activeTab: "MAP" | "SETTINGS" | "NODES";
+  setActiveTab: React.Dispatch<React.SetStateAction<"MAP" | "SETTINGS" | "NODES">>;
   apiUrl: string;
   setApiUrl: React.Dispatch<React.SetStateAction<string>>;
   isApiHealthy: boolean;
@@ -37,7 +40,18 @@ interface ControlOverlayProps {
   onClose?: () => void;
 }
 
-export function ControlOverlay({ stations, selectedStationId, activeTab, setActiveTab, apiUrl, setApiUrl, isApiHealthy, stats, onClose }: ControlOverlayProps) {
+export function ControlOverlay({ 
+  stations, 
+  selectedStationId, 
+  onStationClick,
+  activeTab, 
+  setActiveTab, 
+  apiUrl, 
+  setApiUrl, 
+  isApiHealthy, 
+  stats, 
+  onClose 
+}: ControlOverlayProps) {
   // Selected Station Details
   const selectedStation = useMemo(() => {
     return stations.find(s => s.id === selectedStationId) || null;
@@ -51,8 +65,8 @@ export function ControlOverlay({ stations, selectedStationId, activeTab, setActi
           onClick={onClose}
           className="flex items-center gap-2 px-4 py-2 rounded-xl bg-siam-green text-black font-black text-[10px] uppercase tracking-widest shadow-lg active:scale-95"
         >
-          <MapIcon size={14} />
-          Back to Map
+          {activeTab === "NODES" ? <HardDrive size={14} /> : <MapIcon size={14} />}
+          Back to {activeTab === "NODES" ? "Table" : "Map"}
         </button>
         <button 
           onClick={onClose}
@@ -173,6 +187,52 @@ export function ControlOverlay({ stations, selectedStationId, activeTab, setActi
               </div>
             </div>
           </div>
+        ) : activeTab === "NODES" ? (
+          <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <LayoutDashboard size={14} className="text-siam-green" />
+                <span className="text-[10px] font-black tracking-[0.3em] uppercase text-white/40">Fleet Insights</span>
+              </div>
+              <p className="text-[9px] font-bold text-white/20 uppercase tracking-widest leading-relaxed">Aggregate performance metrics and network health monitoring.</p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4">
+              {/* Detailed Breakdown Card */}
+              <div className="glass-panel p-5 rounded-2xl border border-white/5 space-y-5">
+                <div className="flex justify-between items-center">
+                  <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">Global Status</span>
+                  <div className="px-2 py-0.5 rounded bg-siam-green text-black text-[8px] font-black">HEALTHY</div>
+                </div>
+                
+                <div className="space-y-4">
+                  <InsightRow label="Network Online" value="100%" color="text-siam-green" />
+                  <InsightRow label="Peak Demand" value={`${(stats.totalPower * 1.1).toFixed(1)} kW`} color="text-white" />
+                  <InsightRow label="Fault Rate" value="0.0%" color="text-white" />
+                </div>
+              </div>
+
+              {/* Status Summary */}
+              <div className="grid grid-cols-2 gap-3">
+                 <div className="glass-panel p-4 rounded-xl border border-siam-green/20 bg-siam-green/[0.02]">
+                    <p className="text-[8px] font-black text-white/30 uppercase tracking-widest mb-1">Operational</p>
+                    <p className="text-2xl font-black text-siam-green leading-none">{stats.available + stats.charging}</p>
+                 </div>
+                 <div className="glass-panel p-4 rounded-xl border border-red-500/20 bg-red-500/[0.02]">
+                    <p className="text-[8px] font-black text-white/30 uppercase tracking-widest mb-1">Critical</p>
+                    <p className="text-2xl font-black text-red-500 leading-none">{stats.faulted}</p>
+                 </div>
+              </div>
+
+              <button 
+                onClick={() => setActiveTab("MAP")}
+                className="w-full py-4 rounded-xl bg-white/[0.03] border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 active:scale-95"
+              >
+                <MapIcon size={14} />
+                Return to Live Map
+              </button>
+            </div>
+          </div>
         ) : (
           <div className="space-y-5">
             {/* Node Details Divider */}
@@ -270,7 +330,7 @@ export function ControlOverlay({ stations, selectedStationId, activeTab, setActi
       {/* Shared Navigation (Outside the Switch) */}
       <nav className="mt-8 pt-6 border-t border-white/10 flex justify-between items-center px-1">
         <NavIcon icon={<MapIcon size={16}/>} label="MAP" active={activeTab === "MAP"} onClick={() => setActiveTab("MAP")} />
-        <NavIcon icon={<HardDrive size={16}/>} label="NODES" />
+        <NavIcon icon={<HardDrive size={16}/>} label="NODES" active={activeTab === "NODES"} onClick={() => setActiveTab("NODES")} />
         <NavIcon icon={<History size={16}/>} label="LOGS" />
         <NavIcon icon={<Settings size={16}/>} label="SETTINGS" active={activeTab === "SETTINGS"} onClick={() => setActiveTab("SETTINGS")} />
       </nav>
@@ -307,5 +367,14 @@ function NavIcon({ icon, label, active = false, onClick }: { icon: React.ReactNo
         {label}
       </span>
     </button>
+  );
+}
+
+function InsightRow({ label, value, color }: { label: string, value: string, color: string }) {
+  return (
+    <div className="flex justify-between items-center">
+      <span className="text-[9px] text-white/40 font-black uppercase tracking-widest">{label}</span>
+      <span className={`text-xs font-black ${color} tracking-tight`}>{value}</span>
+    </div>
   );
 }

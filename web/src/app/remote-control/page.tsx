@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { MapViewport } from "@/components/remote-control/map-viewport";
 import { ControlOverlay } from "@/components/remote-control/control-overlay";
+import { NodesTableView } from "@/components/remote-control/nodes-table-view";
 import { 
   LayoutDashboard, 
   User, 
@@ -34,7 +35,7 @@ export default function RemoteControlPage() {
   const [stations, setStations] = useState<Station[]>([]);
   const [selectedStationId, setSelectedStationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"MAP" | "SETTINGS">("MAP");
+  const [activeTab, setActiveTab] = useState<"MAP" | "SETTINGS" | "NODES">("MAP");
   const [apiUrl, setApiUrl] = useState<string>("http://141.11.156.67:8080");
   const [isApiHealthy, setIsApiHealthy] = useState<boolean>(true);
   const [showSidebar, setShowSidebar] = useState<boolean>(false);
@@ -122,6 +123,7 @@ export default function RemoteControlPage() {
           setApiUrl={setApiUrl}
           isApiHealthy={isApiHealthy}
           stats={stats}
+          onStationClick={setSelectedStationId}
           onClose={() => setShowSidebar(false)}
         />
       </div>
@@ -175,14 +177,25 @@ export default function RemoteControlPage() {
           </div>
         </header>
 
-        {/* The Map Component */}
-        <MapViewport 
-          ref={mapRef}
-          stations={stations} 
-          loading={loading} 
-          selectedStationId={selectedStationId}
-          onStationClick={setSelectedStationId}
-        />
+        {/* The Map or Nodes Table Component */}
+        {activeTab === "NODES" ? (
+          <NodesTableView 
+            stations={stations} 
+            selectedStationId={selectedStationId} 
+            onStationClick={(id) => {
+              setSelectedStationId(id);
+              setActiveTab("MAP");
+            }} 
+          />
+        ) : (
+          <MapViewport 
+            ref={mapRef}
+            stations={stations} 
+            loading={loading} 
+            selectedStationId={selectedStationId}
+            onStationClick={setSelectedStationId}
+          />
+        )}
 
         {/* Mobile-only Floating Global Network Summary */}
         {!showSidebar && (
