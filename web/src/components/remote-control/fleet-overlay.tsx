@@ -82,7 +82,7 @@ export function FleetOverlay({
   };
 
   return (
-    <aside className="w-full md:w-[380px] h-full glass-sidebar flex flex-col pointer-events-auto p-6 md:p-8 z-[2000] border-r border-white/10 shadow-3xl overflow-y-auto no-scrollbar pb-12">
+    <aside className="w-full md:w-full h-full glass-sidebar flex flex-col pointer-events-auto px-4 md:px-5 py-6 md:py-8 z-[2000] border-r border-white/10 shadow-3xl overflow-y-auto no-scrollbar pb-12">
       {/* Mobile Header */}
       <div className="md:hidden flex items-center justify-between mb-6">
         <button onClick={onClose} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-400 text-black font-black text-[10px] uppercase tracking-widest shadow-lg active:scale-95">
@@ -95,12 +95,12 @@ export function FleetOverlay({
       </div>
 
       {/* Brand Header */}
-      <div className="mb-8 animate-in fade-in slide-in-from-left-4 duration-700">
-        <div className="group relative overflow-hidden flex items-center justify-center bg-white p-2 rounded-xl shadow-lg border border-white/10 mb-2 h-16 transition-all duration-500 hover:shadow-[0_0_25px_rgba(27,69,143,0.3)] hover:border-siam-blue/40 cursor-default">
+      <div className="mb-6 animate-in fade-in slide-in-from-left-4 duration-700">
+        <div className="group relative overflow-hidden flex items-center justify-center bg-white p-1.5 rounded-xl shadow-lg border border-white/10 mb-1.5 h-12 transition-all duration-500 hover:shadow-[0_0_20px_rgba(27,69,143,0.3)] hover:border-siam-blue/40 cursor-default">
           <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-siam-blue/10 to-transparent transform -skew-x-12 -translate-x-[200%] group-hover:translate-x-[200%] transition-transform duration-[1.2s] ease-in-out pointer-events-none z-20" />
           <img src="/assets/siamev_logo.jpg" alt="SIAM EV Corporate Logo" className="w-full h-full object-contain relative z-10 transition-transform duration-500 group-hover:scale-[1.03]" />
         </div>
-        <p className="text-[10px] font-bold text-cyan-400/90 tracking-[0.2em] mt-1 ml-1 uppercase">Fleet Tracker</p>
+        <p className="text-[8px] font-black text-cyan-400/90 tracking-[0.2em] ml-1 uppercase">Fleet Tracker</p>
       </div>
 
 
@@ -231,13 +231,13 @@ function SelectedTruckDetail({ truck, statusColor }: { truck: Truck; statusColor
 
       {/* Status + Speed */}
       <div className="grid grid-cols-2 gap-2 mb-5">
-        <div className="glass-panel p-3.5 rounded-xl ring-1 ring-white/5 bg-white/[0.02]">
-          <span className="text-[9px] font-black text-white/40 uppercase block mb-1.5 tracking-widest">Status</span>
-          <span className={`text-base font-black uppercase tracking-tight ${statusColor(truck.status)}`}>{truck.status}</span>
+        <div className="glass-panel p-3 rounded-xl ring-1 ring-white/5 bg-white/[0.02] flex flex-col justify-center min-w-0 overflow-hidden">
+          <span className="text-[8px] font-black text-white/40 uppercase block mb-1 tracking-widest truncate">Status</span>
+          <span className={`text-[13px] font-black uppercase tracking-tight ${statusColor(truck.status)} truncate`}>{truck.status}</span>
         </div>
-        <div className="glass-panel p-3.5 rounded-xl ring-1 ring-white/5 bg-white/[0.02]">
-          <span className="text-[9px] font-black text-white/40 uppercase block mb-1.5 tracking-widest">Speed</span>
-          <span className="text-base font-black text-white tracking-tight">{truck.speed} <span className="text-[9px] text-white/30">km/h</span></span>
+        <div className="glass-panel p-3 rounded-xl ring-1 ring-white/5 bg-white/[0.02] flex flex-col justify-center min-w-0 overflow-hidden">
+          <span className="text-[8px] font-black text-white/40 uppercase block mb-1 tracking-widest truncate">Speed</span>
+          <span className="text-[13px] font-black text-white tracking-tight truncate">{truck.speed} <span className="text-[8px] text-white/30">km/h</span></span>
         </div>
       </div>
 
@@ -291,13 +291,13 @@ function SelectedTruckDetail({ truck, statusColor }: { truck: Truck; statusColor
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/5">
-              <div>
-                <span className="text-[8px] text-white/30 font-black uppercase tracking-widest block mb-0.5">ETA</span>
-                <span className="text-sm font-black text-cyan-400">{truck.route.eta}</span>
+              <div className="min-w-0 overflow-hidden">
+                <span className="text-[8px] text-white/30 font-black uppercase tracking-widest block mb-0.5 truncate">ETA</span>
+                <span className="text-[12px] font-black text-cyan-400 truncate">{truck.route.eta}</span>
               </div>
-              <div>
-                <span className="text-[8px] text-white/30 font-black uppercase tracking-widest block mb-0.5">Remaining</span>
-                <span className="text-sm font-black text-white">{truck.route.distanceRemaining} km</span>
+              <div className="min-w-0 overflow-hidden">
+                <span className="text-[8px] text-white/30 font-black uppercase tracking-widest block mb-0.5 truncate">Remaining</span>
+                <span className="text-[12px] font-black text-white truncate">{truck.route.distanceRemaining} km</span>
               </div>
             </div>
           </div>

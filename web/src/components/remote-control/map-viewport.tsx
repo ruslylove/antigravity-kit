@@ -44,6 +44,7 @@ export const MapViewport = forwardRef(({
     zoomIn: () => map?.zoomIn(),
     zoomOut: () => map?.zoomOut(),
     centerMap: () => map?.flyTo([13.7367, 100.5232], 12, { duration: 1.5 }),
+    invalidateSize: () => map?.invalidateSize(),
   }));
 
   if (!L || loading) {

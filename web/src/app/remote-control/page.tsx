@@ -35,6 +35,8 @@ export default function RemoteControlPage() {
   const [isApiHealthy, setIsApiHealthy] = useState<boolean>(true);
   const [showSidebar, setShowSidebar] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [sidebarWidth, setSidebarWidth] = useState<number>(320); // Desktop sidebar width (minimized by default)
+  const [isResizing, setIsResizing] = useState<boolean>(false);
 
   // --- Domain / Layer State ---
   const [activeDomain, setActiveDomain] = useState<DomainType>("EV");
@@ -60,7 +62,12 @@ export default function RemoteControlPage() {
   // --- Load saved API URL ---
   useEffect(() => {
     const saved = localStorage.getItem("siam_ocpp_url");
-    if (saved) setApiUrl(saved);
+    if (saved) {
+      setApiUrl(saved);
+    } else {
+      // Automatic fallback to the production mock API deployed on the VPS
+      setApiUrl("http://141.11.156.67:1880");
+    }
   }, []);
 
   // --- EV Stats ---
@@ -159,6 +166,55 @@ export default function RemoteControlPage() {
     return () => document.removeEventListener("fullscreenchange", handler);
   }, []);
 
+  // --- Resize Slider Logic ---
+  const startResizing = React.useCallback((mouseDownEvent: React.MouseEvent) => {
+    setIsResizing(true);
+  }, []);
+
+  const stopResizing = React.useCallback(() => {
+    setIsResizing(false);
+  }, []);
+
+  const resize = React.useCallback(
+    (mouseMoveEvent: MouseEvent) => {
+      if (isResizing) {
+        // Calculate bounds: [320px, 60% of screen (max 800px)]
+        const minWidth = 320;
+        const maxWidth = Math.min(800, window.innerWidth * 0.6);
+        const newWidth = Math.min(Math.max(minWidth, mouseMoveEvent.clientX), maxWidth);
+        setSidebarWidth(newWidth);
+      }
+    },
+    [isResizing]
+  );
+
+  useEffect(() => {
+    if (isResizing) {
+      window.addEventListener("mousemove", resize);
+      window.addEventListener("mouseup", stopResizing);
+    } else {
+      window.removeEventListener("mousemove", resize);
+      window.removeEventListener("mouseup", stopResizing);
+    }
+    return () => {
+      window.removeEventListener("mousemove", resize);
+      window.removeEventListener("mouseup", stopResizing);
+    };
+  }, [isResizing, resize, stopResizing]);
+
+  // --- Map Resize Fix ---
+  useEffect(() => {
+    // Immediate sync on width change
+    mapRef.current?.invalidateSize?.();
+    
+    // Fallback sync on initial mount to handle hydration/layout settles
+    const timer = setTimeout(() => {
+      mapRef.current?.invalidateSize?.();
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [sidebarWidth]);
+
 
 
   // --- Which table view to show ---
@@ -168,9 +224,17 @@ export default function RemoteControlPage() {
     (activeDomain === "FLEET" && fleetTab === "LIST");
 
   return (
-    <div className="relative h-screen w-full bg-[#061114] font-inter text-white overflow-hidden flex flex-col md:flex-row antialiased">
+    <div className={`relative h-screen w-full bg-[#061114] font-inter text-white overflow-hidden flex flex-col md:flex-row antialiased ${isResizing ? "cursor-col-resize select-none" : ""}`}>
       {/* === Sidebar === */}
-      <div className={`${showSidebar ? "flex" : "hidden"} md:flex h-full w-full md:w-auto absolute md:relative z-[2000] md:z-10`}>
+      <div 
+        className={`${showSidebar ? "flex w-full absolute bg-[#061114]/95" : "hidden"} md:flex md:relative h-full z-[2000] md:z-10 overflow-hidden border-r border-white/5 shadow-22xl md:w-[320px] flex-none`}
+        style={typeof window !== 'undefined' && window.innerWidth >= 768 ? { 
+          width: `${sidebarWidth}px`,
+          minWidth: `${sidebarWidth}px`,
+          maxWidth: `${sidebarWidth}px`,
+          flex: `0 0 ${sidebarWidth}px`
+        } : {}}
+      >
         {activeDomain === "FACILITIES" ? (
           <FacilitiesOverlay
             facilities={facilities}
@@ -207,8 +271,19 @@ export default function RemoteControlPage() {
         )}
       </div>
 
+      {/* === Resize Handle === */}
+      <div
+        onMouseDown={startResizing}
+        className="hidden md:block absolute top-0 bottom-0 z-[1002] cursor-col-resize group"
+        style={{ left: `${sidebarWidth - 4}px`, width: "8px" }}
+      >
+        <div className="w-full h-full flex items-center justify-center transition-colors group-hover:bg-siam-green/20">
+          <div className="w-[1px] h-32 bg-white/10 group-hover:bg-siam-green/50 transition-colors" />
+        </div>
+      </div>
+
       {/* === Main View === */}
-      <div className="flex-1 relative h-full w-full">
+      <div className={`flex-1 relative h-full w-full ${isResizing ? "pointer-events-none" : ""}`}>
         {/* Top Header */}
         <header className="absolute top-0 left-0 right-0 p-4 md:p-6 flex items-center justify-between md:justify-end gap-3 md:gap-4 z-[1001] pointer-events-none">
           <button

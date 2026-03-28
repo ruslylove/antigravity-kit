@@ -58,7 +58,7 @@ export function ControlOverlay({
   }, [stations, selectedStationId]);
 
   return (
-    <aside className="w-full md:w-[380px] h-full glass-sidebar flex flex-col pointer-events-auto p-6 md:p-8 z-[2000] border-r border-white/10 shadow-3xl overflow-y-auto no-scrollbar pb-12">
+    <aside className="w-full md:w-full h-full glass-sidebar flex flex-col pointer-events-auto p-6 md:p-8 z-[2000] border-r border-white/10 shadow-3xl overflow-y-auto no-scrollbar pb-12">
       {/* Mobile Header with Close Button */}
       <div className="md:hidden flex items-center justify-between mb-6">
         <button 
