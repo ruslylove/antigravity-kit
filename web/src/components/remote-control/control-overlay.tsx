@@ -24,8 +24,8 @@ interface ControlOverlayProps {
   stations: Station[];
   selectedStationId: string | null;
   onStationClick?: (id: string | null) => void;
-  activeTab: "MAP" | "SETTINGS" | "NODES";
-  setActiveTab: React.Dispatch<React.SetStateAction<"MAP" | "SETTINGS" | "NODES">>;
+  activeTab: "MAP" | "SETTINGS" | "NODES" | "LOGS";
+  setActiveTab: React.Dispatch<React.SetStateAction<"MAP" | "SETTINGS" | "NODES" | "LOGS">>;
   apiUrl: string;
   setApiUrl: React.Dispatch<React.SetStateAction<string>>;
   isApiHealthy: boolean;
@@ -86,68 +86,7 @@ export function ControlOverlay({
         <p className="text-[10px] font-bold text-siam-green/90 tracking-[0.2em] mt-1 ml-1 uppercase">Operational Hub BKK</p>
       </div>
 
-      {/* Network Overview Summary - HIDDEN ON MOBILE (Moved to Map overlay) */}
-      <section className="hidden md:block mb-6 p-5 bg-[#050b14] rounded-2xl border border-white/5 relative shadow-inner overflow-hidden">
-        {/* Top brand tint edge */}
-        <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-siam-blue via-siam-green to-siam-blue" />
-        
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/70">Global Network</h2>
-          <div className={`flex items-center gap-1.5 px-2 py-1 rounded transition-all duration-500 ${isApiHealthy ? 'bg-siam-green/10 border-siam-green/40 shadow-[0_0_10px_rgba(59,174,73,0.3)]' : 'bg-red-500/10 border-red-500/40 shadow-[0_0_10px_rgba(239,68,68,0.3)]'} border`}>
-            <span className="relative flex w-1.5 h-1.5">
-              {isApiHealthy && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-siam-green opacity-75"></span>}
-              <span className={`relative inline-flex rounded-full w-1.5 h-1.5 ${isApiHealthy ? 'bg-siam-green' : 'bg-red-500 animate-pulse'}`}></span>
-            </span>
-            <span className={`text-[8px] font-black tracking-[0.2em] leading-none uppercase ${isApiHealthy ? 'text-siam-green' : 'text-red-500'}`}>
-               {isApiHealthy ? 'LIVE SYNC' : 'OFFLINE'}
-            </span>
-          </div>
-        </div>
-        
-        {/* Network Totals Table - Responsive GRID/COLUMNS */}
-        <div className="md:p-5 p-3 mb-4 rounded-xl bg-gradient-to-br from-siam-blue/20 to-transparent border border-siam-blue/20 shadow-md">
-           <div className="grid grid-cols-3 md:grid-cols-none md:space-y-4 gap-2 md:gap-0">
-              {/* Stat 1: Energy */}
-              <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-1 md:gap-0 h-full">
-                <div className="space-y-0.5 md:space-y-1">
-                  <span className="text-[7px] md:text-[10px] font-black text-white/40 uppercase tracking-widest block">Energy</span>
-                  <div className="text-sm md:text-3xl font-black text-white tracking-tight leading-none truncate">
-                    {stats.totalEnergy.toFixed(1)} <span className="text-[7px] md:text-xs text-white/40">kWh</span>
-                  </div>
-                </div>
-                <Battery size={14} className="text-siam-green opacity-60 md:size-6" />
-              </div>
 
-              {/* Stat 2: Capacity */}
-              <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-1 md:gap-0 pt-0 md:pt-4 border-l md:border-l-0 md:border-t border-white/5 pl-2 md:pl-0 h-full">
-                <div className="space-y-0.5 md:space-y-1">
-                  <span className="text-[7px] md:text-[10px] font-black text-white/40 uppercase tracking-widest block">Capacity</span>
-                  <div className="text-sm md:text-3xl font-black text-white tracking-tight leading-none truncate">
-                    {stats.totalCapacity} <span className="text-[7px] md:text-xs text-white/40">kW</span>
-                  </div>
-                </div>
-                <Zap size={14} className="text-[#3b82f6] opacity-60 md:size-6" />
-              </div>
-
-              {/* Stat 3: Live Output */}
-              <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-1 md:gap-0 pt-0 md:pt-4 border-l md:border-l-0 md:border-t border-white/5 pl-2 md:pl-0 h-full">
-                <div className="space-y-0.5 md:space-y-1">
-                  <span className="text-[7px] md:text-[10px] font-black text-white/40 uppercase tracking-widest block">Output</span>
-                  <div className="text-sm md:text-3xl font-black text-siam-green tracking-tight leading-none truncate">
-                    {stats.totalPower.toFixed(1)} <span className="text-[7px] md:text-xs text-white/40">kW</span>
-                  </div>
-                </div>
-                <Flame size={14} className="text-siam-green opacity-60 md:size-6" />
-              </div>
-           </div>
-        </div>
-
-        <div className="grid grid-cols-3 gap-3">
-          <StatusCard icon={<CheckCircle2 size={14} className="text-siam-green"/>} count={stats.available.toString()} label="AVAL" color="text-siam-green" />
-          <StatusCard icon={<Zap size={14} className="text-[#3b82f6]"/>} count={stats.charging.toString()} label="CHRG" color="text-[#3b82f6]" />
-          <StatusCard icon={<AlertCircle size={14} className="text-[#ef4444]"/>} count={stats.faulted.toString()} label="FLTD" color="text-[#ef4444]" />
-        </div>
-      </section>
 
       <section className="flex-1 space-y-5 overflow-y-auto no-scrollbar">
         {activeTab === "SETTINGS" ? (
@@ -186,6 +125,61 @@ export function ControlOverlay({
                 </button>
               </div>
             </div>
+          </div>
+        ) : activeTab === "LOGS" ? (
+          <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-500">
+            <div className="flex items-center gap-4 mb-2 opacity-80">
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent to-white/20"></div>
+              <span className="text-[9px] font-black tracking-[0.4em] text-white/50 uppercase">Activity Log</span>
+              <div className="flex-1 h-px bg-gradient-to-l from-transparent to-white/20"></div>
+            </div>
+
+            <div className="glass-panel p-5 rounded-2xl border border-white/5 space-y-4 shadow-2xl">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">System Events</span>
+                <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded ${isApiHealthy ? 'bg-siam-green/10 border border-siam-green/30' : 'bg-red-500/10 border border-red-500/30'}`}>
+                  <span className={`relative flex w-1.5 h-1.5`}>
+                    <span className={`relative inline-flex rounded-full w-1.5 h-1.5 ${isApiHealthy ? 'bg-siam-green' : 'bg-red-500'}`}></span>
+                  </span>
+                  <span className={`text-[7px] font-black tracking-widest uppercase ${isApiHealthy ? 'text-siam-green' : 'text-red-500'}`}>LIVE</span>
+                </div>
+              </div>
+
+              <div className="space-y-2 max-h-[400px] overflow-y-auto no-scrollbar">
+                {stations.map((station) => (
+                  <div key={`log-${station.id}`} className="p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-colors">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[8px] font-black text-white/30 uppercase tracking-widest">{station.id.toUpperCase()}</span>
+                      <span className={`text-[7px] font-black px-1.5 py-0.5 rounded uppercase ${station.status === 'Available' ? 'bg-siam-green/20 text-siam-green' : station.status === 'Charging' ? 'bg-blue-500/20 text-blue-400' : 'bg-red-500/20 text-red-400'}`}>
+                        {station.status}
+                      </span>
+                    </div>
+                    <div className="text-[9px] text-white/60 font-bold">
+                      {station.status === 'Charging' 
+                        ? `Active session — ${(station.powerOutput || 0).toFixed(1)} kW output, ${(station.currentMeter || 0).toFixed(1)} kWh delivered`
+                        : station.status === 'Available'
+                        ? 'Idle — Ready for new session'
+                        : 'Fault detected — Requires attention'
+                      }
+                    </div>
+                  </div>
+                ))}
+
+                {stations.length === 0 && (
+                  <div className="h-32 flex items-center justify-center">
+                    <span className="text-[9px] font-black text-white/20 tracking-[0.3em] uppercase">No events recorded</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <button 
+              onClick={() => setActiveTab("MAP")}
+              className="w-full py-4 rounded-xl bg-white/[0.03] border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 active:scale-95"
+            >
+              <MapIcon size={14} />
+              Return to Live Map
+            </button>
           </div>
         ) : activeTab === "NODES" ? (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
@@ -331,7 +325,7 @@ export function ControlOverlay({
       <nav className="mt-8 pt-6 border-t border-white/10 flex justify-between items-center px-1">
         <NavIcon icon={<MapIcon size={16}/>} label="MAP" active={activeTab === "MAP"} onClick={() => setActiveTab("MAP")} />
         <NavIcon icon={<HardDrive size={16}/>} label="NODES" active={activeTab === "NODES"} onClick={() => setActiveTab("NODES")} />
-        <NavIcon icon={<History size={16}/>} label="LOGS" />
+        <NavIcon icon={<History size={16}/>} label="LOGS" active={activeTab === "LOGS"} onClick={() => setActiveTab("LOGS")} />
         <NavIcon icon={<Settings size={16}/>} label="SETTINGS" active={activeTab === "SETTINGS"} onClick={() => setActiveTab("SETTINGS")} />
       </nav>
     </aside>
