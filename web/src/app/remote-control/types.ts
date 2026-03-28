@@ -37,6 +37,7 @@ export interface Facility {
   id: string;
   name: string;
   type: "Warehouse" | "Office" | "Factory" | "Distribution Center";
+  imageUrl?: string;        // URL to facility photo
   lat: number;
   lng: number;
   status: "Normal" | "High Usage" | "Critical" | "Offline";

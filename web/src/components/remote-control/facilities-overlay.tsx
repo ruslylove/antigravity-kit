@@ -187,6 +187,23 @@ export function FacilitiesOverlay({
                 </div>
                 <h3 className="font-manrope font-extrabold text-xl text-white mb-4 uppercase tracking-tighter leading-tight">{selectedFacility.name}</h3>
 
+                {selectedFacility.imageUrl && (
+                  <div className="relative w-full h-40 rounded-2xl overflow-hidden mb-6 border border-white/10 group/img shadow-2xl">
+                    <img 
+                      src={selectedFacility.imageUrl} 
+                      alt={selectedFacility.name} 
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover/img:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                    <div className="absolute bottom-3 left-4">
+                      <div className="flex items-center gap-1.5">
+                        <Building2 size={10} className="text-amber-400" />
+                        <span className="text-[8px] font-black text-white/70 uppercase tracking-[0.2em]">Live Facility Feed</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-2 mb-5">
                   <div className="glass-panel p-3.5 rounded-xl ring-1 ring-white/5 bg-white/[0.02]">
                     <span className="text-[9px] font-black text-white/40 uppercase block mb-1.5 tracking-widest">Status</span>
