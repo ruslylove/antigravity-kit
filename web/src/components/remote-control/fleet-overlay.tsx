@@ -161,7 +161,7 @@ export function FleetOverlay({
                     </div>
                     <span className={`text-[7px] font-black px-1.5 py-0.5 rounded uppercase ${statusBg(t.status)}`}>{t.status}</span>
                   </div>
-                  <h4 className="text-sm font-black text-white uppercase tracking-tight mb-2">{t.name}</h4>
+                  <h4 className="text-sm font-black text-white uppercase tracking-tight mb-2 truncate">{t.name}</h4>
                   <div className="flex items-center gap-3">
                     {/* Load level bar */}
                     <div className="flex gap-0.5">
@@ -227,7 +227,7 @@ function SelectedTruckDetail({ truck, statusColor }: { truck: Truck; statusColor
         </div>
         <button className="text-white/40 hover:text-white transition-colors"><MoreVertical size={14} /></button>
       </div>
-      <h3 className="font-manrope font-extrabold text-xl text-white mb-4 uppercase tracking-tighter leading-tight">{truck.name}</h3>
+      <h3 className="font-manrope font-extrabold text-xl text-white mb-4 uppercase tracking-tighter leading-tight truncate">{truck.name}</h3>
 
       {/* Status + Speed */}
       <div className="grid grid-cols-2 gap-2 mb-5">
@@ -282,11 +282,11 @@ function SelectedTruckDetail({ truck, statusColor }: { truck: Truck; statusColor
               <div className="flex-1 space-y-3">
                 <div>
                   <span className="text-[8px] text-white/30 font-black uppercase tracking-widest block">Origin</span>
-                  <span className="text-[11px] font-black text-white">{truck.route.origin.name}</span>
+                  <span className="text-[11px] font-black text-white truncate block">{truck.route.origin.name}</span>
                 </div>
                 <div>
                   <span className="text-[8px] text-white/30 font-black uppercase tracking-widest block">Destination</span>
-                  <span className="text-[11px] font-black text-white">{truck.route.destination.name}</span>
+                  <span className="text-[11px] font-black text-white truncate block">{truck.route.destination.name}</span>
                 </div>
               </div>
             </div>
