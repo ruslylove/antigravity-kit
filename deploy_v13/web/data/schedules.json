@@ -1,0 +1,12 @@
+{
+  "station-bkk-001": {
+    "startTime": "18:00",
+    "endTime": "08:00",
+    "enabled": false
+  },
+  "station-bkk-002": {
+    "startTime": "18:00",
+    "endTime": "08:00",
+    "enabled": true
+  }
+}
