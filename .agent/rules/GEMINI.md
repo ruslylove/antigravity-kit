@@ -110,7 +110,7 @@ When user's prompt is NOT in English:
 - **Code**: Concise, direct, no over-engineering. Self-documenting.
 - **Testing**: Mandatory. Pyramid (Unit > Int > E2E) + AAA Pattern.
 - **Performance**: Measure first. Adhere to 2025 standards (Core Web Vitals).
-- **Infra/Safety**: 5-Phase Deployment. Verify secrets security.
+- **Infra/Safety**: 5-Phase Deployment. Verify secrets security. **MANDATORY: Always ask for explicit permission before any server deployment. Prioritize local testing first (e.g., `python .agent/scripts/checklist.py .`).**
 
 ### 📁 File Dependency Awareness
 

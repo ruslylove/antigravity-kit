@@ -1,0 +1,200 @@
+{
+  "version": 3,
+  "pages404": true,
+  "appType": "app",
+  "caseSensitive": false,
+  "basePath": "",
+  "redirects": [
+    {
+      "source": "/:path+/",
+      "destination": "/:path+",
+      "internal": true,
+      "priority": true,
+      "statusCode": 308,
+      "regex": "^(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))/$"
+    },
+    {
+      "source": "/",
+      "destination": "/remote-control",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/(?:/)?$"
+    }
+  ],
+  "headers": [],
+  "rewrites": {
+    "beforeFiles": [],
+    "afterFiles": [],
+    "fallback": []
+  },
+  "dynamicRoutes": [],
+  "staticRoutes": [
+    {
+      "page": "/",
+      "regex": "^/(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/(?:/)?$"
+    },
+    {
+      "page": "/_global-error",
+      "regex": "^/_global\\-error(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_global\\-error(?:/)?$"
+    },
+    {
+      "page": "/_not-found",
+      "regex": "^/_not\\-found(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_not\\-found(?:/)?$"
+    },
+    {
+      "page": "/api/facilities",
+      "regex": "^/api/facilities(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/facilities(?:/)?$"
+    },
+    {
+      "page": "/api/fleet",
+      "regex": "^/api/fleet(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/fleet(?:/)?$"
+    },
+    {
+      "page": "/api/ocpp/stations",
+      "regex": "^/api/ocpp/stations(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/ocpp/stations(?:/)?$"
+    },
+    {
+      "page": "/api/proxy",
+      "regex": "^/api/proxy(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/proxy(?:/)?$"
+    },
+    {
+      "page": "/docs",
+      "regex": "^/docs(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/docs(?:/)?$"
+    },
+    {
+      "page": "/docs/agents",
+      "regex": "^/docs/agents(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/docs/agents(?:/)?$"
+    },
+    {
+      "page": "/docs/cli",
+      "regex": "^/docs/cli(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/docs/cli(?:/)?$"
+    },
+    {
+      "page": "/docs/guide/examples/brainstorm",
+      "regex": "^/docs/guide/examples/brainstorm(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/docs/guide/examples/brainstorm(?:/)?$"
+    },
+    {
+      "page": "/docs/guide/examples/create",
+      "regex": "^/docs/guide/examples/create(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/docs/guide/examples/create(?:/)?$"
+    },
+    {
+      "page": "/docs/guide/examples/debugging",
+      "regex": "^/docs/guide/examples/debugging(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/docs/guide/examples/debugging(?:/)?$"
+    },
+    {
+      "page": "/docs/guide/examples/deployment",
+      "regex": "^/docs/guide/examples/deployment(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/docs/guide/examples/deployment(?:/)?$"
+    },
+    {
+      "page": "/docs/guide/examples/new-feature",
+      "regex": "^/docs/guide/examples/new\\-feature(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/docs/guide/examples/new\\-feature(?:/)?$"
+    },
+    {
+      "page": "/docs/guide/examples/orchestration",
+      "regex": "^/docs/guide/examples/orchestration(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/docs/guide/examples/orchestration(?:/)?$"
+    },
+    {
+      "page": "/docs/guide/examples/plan",
+      "regex": "^/docs/guide/examples/plan(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/docs/guide/examples/plan(?:/)?$"
+    },
+    {
+      "page": "/docs/guide/examples/preview",
+      "regex": "^/docs/guide/examples/preview(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/docs/guide/examples/preview(?:/)?$"
+    },
+    {
+      "page": "/docs/guide/examples/status",
+      "regex": "^/docs/guide/examples/status(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/docs/guide/examples/status(?:/)?$"
+    },
+    {
+      "page": "/docs/guide/examples/test",
+      "regex": "^/docs/guide/examples/test(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/docs/guide/examples/test(?:/)?$"
+    },
+    {
+      "page": "/docs/guide/examples/ui-design",
+      "regex": "^/docs/guide/examples/ui\\-design(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/docs/guide/examples/ui\\-design(?:/)?$"
+    },
+    {
+      "page": "/docs/installation",
+      "regex": "^/docs/installation(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/docs/installation(?:/)?$"
+    },
+    {
+      "page": "/docs/skills",
+      "regex": "^/docs/skills(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/docs/skills(?:/)?$"
+    },
+    {
+      "page": "/docs/workflows",
+      "regex": "^/docs/workflows(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/docs/workflows(?:/)?$"
+    },
+    {
+      "page": "/remote-control",
+      "regex": "^/remote\\-control(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/remote\\-control(?:/)?$"
+    }
+  ],
+  "dataRoutes": [],
+  "rsc": {
+    "header": "rsc",
+    "varyHeader": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+    "prefetchHeader": "next-router-prefetch",
+    "didPostponeHeader": "x-nextjs-postponed",
+    "contentTypeHeader": "text/x-component",
+    "suffix": ".rsc",
+    "prefetchSegmentHeader": "next-router-segment-prefetch",
+    "prefetchSegmentSuffix": ".segment.rsc",
+    "prefetchSegmentDirSuffix": ".segments",
+    "clientParamParsing": false,
+    "dynamicRSCPrerender": false
+  },
+  "rewriteHeaders": {
+    "pathHeader": "x-nextjs-rewritten-path",
+    "queryHeader": "x-nextjs-rewritten-query"
+  }
+}

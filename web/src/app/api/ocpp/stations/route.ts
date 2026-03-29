@@ -1,4 +1,29 @@
 import { NextResponse } from "next/server";
+import fs from "fs/promises";
+import path from "path";
+
+const DATA_DIR = path.join(process.cwd(), "data");
+const DATA_FILE = path.join(DATA_DIR, "schedules.json");
+
+console.log("OCPP Stations API: Using data file at:", DATA_FILE);
+
+async function getSchedules() {
+  try {
+    const data = await fs.readFile(DATA_FILE, "utf-8");
+    return JSON.parse(data);
+  } catch (error) {
+    return {};
+  }
+}
+
+async function saveSchedules(schedules: any) {
+  try {
+    await fs.mkdir(DATA_DIR, { recursive: true });
+    await fs.writeFile(DATA_FILE, JSON.stringify(schedules, null, 2), "utf-8");
+  } catch (error) {
+    console.error("Failed to save schedules:", error);
+  }
+}
 
 export async function GET() {
   // Mock logic to simulate dynamic data
@@ -120,5 +145,30 @@ export async function GET() {
   // Simulate server latency
   await new Promise((resolve) => setTimeout(resolve, 300));
 
-  return NextResponse.json(stations);
+  // Merge with persistent schedules
+  const schedules = await getSchedules();
+  const stationsWithSchedules = stations.map(s => ({
+    ...s,
+    schedule: schedules[s.id] || undefined
+  }));
+
+  return NextResponse.json(stationsWithSchedules);
+}
+
+export async function POST(request: Request) {
+  try {
+    const { stationId, schedule } = await request.json();
+    
+    if (!stationId || !schedule) {
+      return NextResponse.json({ error: "Missing stationId or schedule" }, { status: 400 });
+    }
+
+    const schedules = await getSchedules();
+    schedules[stationId] = schedule;
+    await saveSchedules(schedules);
+
+    return NextResponse.json({ success: true, schedule });
+  } catch (error) {
+    return NextResponse.json({ error: "Failed to update schedule" }, { status: 500 });
+  }
 }

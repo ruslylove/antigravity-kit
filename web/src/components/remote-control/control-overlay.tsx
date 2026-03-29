@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { 
   Zap, 
   CheckCircle2, 
@@ -16,7 +16,11 @@ import {
   Flame,
   X,
   Search,
-  LayoutDashboard
+  LayoutDashboard,
+  Clock,
+  Calendar,
+  ToggleLeft,
+  ToggleRight
 } from "lucide-react";
 import { Station } from "@/app/remote-control/page";
 
@@ -37,6 +41,7 @@ interface ControlOverlayProps {
     totalPower: number;
     totalCapacity: number;
   };
+  onUpdateSchedule?: (stationId: string, schedule: any) => void;
   onClose?: () => void;
 }
 
@@ -50,12 +55,30 @@ export function ControlOverlay({
   setApiUrl, 
   isApiHealthy, 
   stats, 
+  onUpdateSchedule,
   onClose 
 }: ControlOverlayProps) {
   // Selected Station Details
   const selectedStation = useMemo(() => {
     return stations.find(s => s.id === selectedStationId) || null;
   }, [stations, selectedStationId]);
+
+  // Local state for schedule editing
+  const [schedStart, setSchedStart] = useState("18:00");
+  const [schedEnd, setSchedEnd] = useState("08:00");
+  const [schedEnabled, setSchedEnabled] = useState(false);
+
+  useEffect(() => {
+    if (selectedStation?.schedule) {
+      setSchedStart(selectedStation.schedule.startTime);
+      setSchedEnd(selectedStation.schedule.endTime);
+      setSchedEnabled(selectedStation.schedule.enabled);
+    } else {
+      setSchedStart("18:00");
+      setSchedEnd("08:00");
+      setSchedEnabled(false);
+    }
+  }, [selectedStationId, selectedStation?.schedule]);
 
   return (
     <aside className="w-full md:w-full h-full glass-sidebar flex flex-col pointer-events-auto p-6 md:p-8 z-[2000] border-r border-white/10 shadow-3xl overflow-y-auto no-scrollbar pb-12">
@@ -297,6 +320,63 @@ export function ControlOverlay({
                       <LogItem label="Socket Status" value={selectedStation.socketStatus || "Ready"} valueClass="text-white/80 font-black" />
                     </div>
                   </div>
+                </div>
+
+                {/* Charging Schedule Section */}
+                <div className="glass-panel p-5 rounded-2xl ring-1 ring-white/10 bg-white/[0.04] shadow-2xl mb-6 space-y-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Clock size={12} className="text-amber-400" />
+                      <span className="text-[9px] font-black tracking-[0.2em] text-white/60 uppercase">Charging Schedule</span>
+                    </div>
+                    <button 
+                      onClick={() => setSchedEnabled(!schedEnabled)}
+                      className={`transition-colors ${schedEnabled ? "text-siam-green" : "text-white/20"}`}
+                    >
+                      {schedEnabled ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[8px] font-black text-white/30 uppercase tracking-widest pl-1">Start Time</label>
+                      <input 
+                        type="time" 
+                        value={schedStart}
+                        onChange={(e) => setSchedStart(e.target.value)}
+                        className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-amber-400/50 transition-colors"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[8px] font-black text-white/30 uppercase tracking-widest pl-1">End Time</label>
+                      <input 
+                        type="time" 
+                        value={schedEnd}
+                        onChange={(e) => setSchedEnd(e.target.value)}
+                        className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-amber-400/50 transition-colors"
+                      />
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={() => onUpdateSchedule && selectedStation && onUpdateSchedule(selectedStation.id, {
+                      startTime: schedStart,
+                      endTime: schedEnd,
+                      enabled: schedEnabled
+                    })}
+                    className="w-full py-2.5 rounded-xl bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/20 text-amber-400 font-black text-[9px] uppercase tracking-widest transition-all active:scale-95"
+                  >
+                    Apply Schedule
+                  </button>
+                  
+                  {selectedStation?.schedule?.enabled && (
+                    <div className="pt-2 flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                      <p className="text-[8px] font-bold text-amber-400/70 uppercase tracking-wider">
+                        Active: {selectedStation.schedule.startTime} - {selectedStation.schedule.endTime}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Action Buttons */}

@@ -1,0 +1,18 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/docs/layout,_N_T_/docs/guide/layout,_N_T_/docs/guide/examples/layout,_N_T_/docs/guide/examples/test/layout,_N_T_/docs/guide/examples/test/page,_N_T_/docs/guide/examples/test"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/docs/guide/examples/test/__PAGE__",
+    "/docs/guide/examples/test",
+    "/docs/guide/examples",
+    "/docs/guide",
+    "/docs",
+    "/_index",
+    "/_head"
+  ]
+}

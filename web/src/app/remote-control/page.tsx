@@ -37,6 +37,7 @@ export default function RemoteControlPage() {
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [sidebarWidth, setSidebarWidth] = useState<number>(320); // Desktop sidebar width (minimized by default)
   const [isResizing, setIsResizing] = useState<boolean>(false);
+  const [mounted, setMounted] = useState<boolean>(false);
 
   // --- Domain / Layer State ---
   const [activeDomain, setActiveDomain] = useState<DomainType>("EV");
@@ -61,6 +62,7 @@ export default function RemoteControlPage() {
 
   // --- Load saved API URL ---
   useEffect(() => {
+    setMounted(true);
     const saved = localStorage.getItem("siam_ocpp_url");
     if (saved) {
       setApiUrl(saved);
@@ -69,6 +71,23 @@ export default function RemoteControlPage() {
       setApiUrl("http://141.11.156.67:1880");
     }
   }, []);
+
+  const handleUpdateSchedule = async (stationId: string, schedule: any) => {
+    try {
+      const response = await fetch("/api/ocpp/stations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stationId, schedule }),
+      });
+      
+      if (!response.ok) throw new Error("Failed to update schedule via API");
+      
+      // Update local state by re-triggering station fetch or optimistic update
+      setStations(prev => prev.map(s => s.id === stationId ? { ...s, schedule } : s));
+    } catch (error) {
+      console.error("API Update Error:", error);
+    }
+  };
 
   // --- EV Stats ---
   const evStats = useMemo(() => ({
@@ -228,7 +247,7 @@ export default function RemoteControlPage() {
       {/* === Sidebar === */}
       <div 
         className={`${showSidebar ? "flex w-full absolute bg-[#061114]/95" : "hidden"} md:flex md:relative h-full z-[2000] md:z-10 overflow-hidden border-r border-white/5 shadow-22xl md:w-[320px] flex-none`}
-        style={typeof window !== 'undefined' && window.innerWidth >= 768 ? { 
+        style={mounted && typeof window !== 'undefined' && window.innerWidth >= 768 ? { 
           width: `${sidebarWidth}px`,
           minWidth: `${sidebarWidth}px`,
           maxWidth: `${sidebarWidth}px`,
@@ -266,6 +285,7 @@ export default function RemoteControlPage() {
             isApiHealthy={isApiHealthy}
             stats={evStats}
             onStationClick={setSelectedStationId}
+            onUpdateSchedule={handleUpdateSchedule}
             onClose={() => setShowSidebar(false)}
           />
         )}
@@ -275,7 +295,7 @@ export default function RemoteControlPage() {
       <div
         onMouseDown={startResizing}
         className="hidden md:block absolute top-0 bottom-0 z-[1002] cursor-col-resize group"
-        style={{ left: `${sidebarWidth - 4}px`, width: "8px" }}
+        style={{ left: mounted ? `${sidebarWidth - 4}px` : "316px", width: "8px" }}
       >
         <div className="w-full h-full flex items-center justify-center transition-colors group-hover:bg-siam-green/20">
           <div className="w-[1px] h-32 bg-white/10 group-hover:bg-siam-green/50 transition-colors" />

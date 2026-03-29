@@ -20,6 +20,11 @@ export interface Station {
   socketStatus?: string;
   currentMeter?: number;
   powerOutput?: number;
+  schedule?: {
+    startTime: string; // "HH:mm"
+    endTime: string;   // "HH:mm"
+    enabled: boolean;
+  }
 }
 
 // --- Facilities Domain ---
