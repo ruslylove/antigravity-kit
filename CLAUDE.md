@@ -4,47 +4,72 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Layout
 
-This repository has two distinct parts:
+This is a hybrid repo:
 
-- **`.agent/`** — The Antigravity Kit itself: 20 specialist AI agents, 37 skills, 11 workflow slash commands. These are markdown/Python files consumed by AI coding assistants, not application code.
-- **`web/`** — A Next.js 16 web application: a real-time CSMS (Charging Station Management System) dashboard plus a documentation site.
+- `web/` — the actual Next.js 16 / React 19 application (branded **Siam EV — CSMS**, a Charging Station Management System UI). All build/dev/lint commands run from here.
+- `.agent/` — Antigravity Kit templates (agents, skills, workflows). This is content authored for AI tooling; the web app reads static descriptors from `web/src/services/*.json` (not from `.agent/` at runtime).
+- Root `package.json` is just metadata for the Antigravity Kit publication — it has **no scripts**. Don't run npm commands from the repo root.
+- `captain-definition` + `web/Dockerfile` configure CapRover deployment (builds from `web/`, exposes port 3000, uses Next.js `output: "standalone"`).
 
-## Web App Commands
+## Common Commands
 
 All commands run from `web/`:
 
 ```bash
 cd web
-npm run dev      # Start dev server (Next.js)
-npm run build    # Production build (standalone output)
-npm run start    # Serve production build
-npm run lint     # ESLint
+npm install           # first-time or after dep changes
+npm run dev           # Next.js dev server (http://localhost:3000)
+npm run build         # production build (standalone output)
+npm run start         # serve the built app
+npm run lint          # ESLint via eslint-config-next (flat config)
 ```
 
-## Web App Architecture
+There is **no test runner configured** — don't invent `npm test`. There is no type-check script either; rely on `next build` or run `npx tsc --noEmit` from `web/` if needed.
 
-**Tech stack**: Next.js 16, React 19, TypeScript, Tailwind CSS v4, Leaflet maps, MDX docs, `next-themes`.
+## Architecture
 
-**App Router structure** (`web/src/app/`):
-- `/remote-control` — The primary dashboard page (root `/` redirects here). A client component managing three operational domains: **EV** (charging stations via OCPP), **Facilities**, **Fleet** (trucks). Each domain has a sidebar overlay, map layer, and table view. State is polled every 3-5 seconds.
-- `/docs` — MDX-based documentation site for the Antigravity Kit, with sidebar nav configured in `web/src/lib/docs-config.ts`.
+### Tech stack
+Next.js 16, React 19, TypeScript, Tailwind CSS v4, Leaflet maps, MDX docs, `next-themes`.
 
-**API routes** (`web/src/app/api/`):
-- `GET /api/proxy?url=<Node-RED URL>` — Reverse proxy to external OCPP backend (Node-RED at `http://141.11.156.67:1880` by default, stored in `localStorage` key `siam_ocpp_url`).
-- `GET/POST /api/ocpp/stations` — Mock EV station data with schedule persistence to `web/data/schedules.json`.
-- `GET /api/facilities` — Facility mock data.
-- `GET /api/fleet` — Fleet/truck mock data.
+### Next.js App Router conventions in use
 
-**Key types** are in `web/src/app/remote-control/types.ts`: `Station`, `Facility`, `FacilityZone`, `Truck`, `TruckRoute`, `DomainType`, `LayerVisibility`.
+- `next.config.ts` enables `reactCompiler: true` (React Compiler via `babel-plugin-react-compiler`) and MDX page extensions — `.md`/`.mdx` files in `src/app/**` render as pages.
+- `output: "standalone"` — the build produces a self-contained Node.js server. The Dockerfile copies `.next/standalone` and `.next/static`. Don't change this without updating the Dockerfile.
+- TypeScript path alias `@/*` → `web/src/*` (see `tsconfig.json`).
+- Dark mode via `next-themes` with `defaultTheme="dark"`, `attribute="class"` (`src/app/layout.tsx`, `src/components/theme-provider.tsx`). Tailwind v4 with CSS variables; theme tokens live in `src/app/globals.css`.
 
-**Component structure** (`web/src/components/remote-control/`):
-- `map-viewport.tsx` — Leaflet map, rendered with `ref` (forwarded) for `invalidateSize` calls.
-- `control-overlay.tsx` / `facilities-overlay.tsx` / `fleet-overlay.tsx` — Domain-specific sidebar panels.
-- `*-table-view.tsx` — Table views shown when sidebar tab is "NODES" or "LIST".
+### Three functional surfaces
 
-**Build output**: `standalone` mode — the build produces a self-contained Node.js server. Deployed via Docker/CapRover (`captain-definition`). Versioned bundles (`dashboard_bundle_v*.tar.gz`) live in the repo root.
+1. **Marketing landing** — `src/app/page.tsx` (single large client component with Typewriter/Leaflet-style visuals).
+2. **Docs site** — `src/app/docs/**` with `layout.tsx` providing sidebar + TOC shell. Sidebar is driven by the single source of truth in `src/lib/docs-config.ts`. Custom MDX components live in `src/mdx-components.tsx` (typography overrides) and `src/components/mdx/` (`Callout`, `StepList`, `Terminal`, `ProTips`, `FeatureGrid`) — import these rather than writing new MDX primitives.
+3. **Remote control UI** — `src/app/remote-control/page.tsx` is the primary dashboard component that manages three operational domains:
+    - **EV** (charging stations via OCPP): Uses `control-overlay.tsx`.
+    - **Facilities**: Uses `facilities-overlay.tsx`.
+    - **Fleet** (trucks): Uses `fleet-overlay.tsx`.
+    It uses `map-viewport.tsx` (Leaflet map) and `nodes-table-view.tsx` (tabular view). The page maintains three tabs (`MAP` / `NODES` / `SETTINGS`) and persists the upstream OCPP URL in `localStorage` under `siam_ocpp_url`. State is polled every 3-5 seconds.
 
-## Antigravity Kit Validation Scripts
+### Data flow for stations
+
+The remote-control page always fetches via **a same-origin URL**, never directly from the upstream OCPP backend:
+
+- If the user has configured a URL (default in code: `http://141.11.156.67:8080`), the client calls `/api/proxy?url=<encoded>` and the route handler (`src/app/api/proxy/route.ts`) fetches `${url}/api/ocpp/stations` server-side with `cache: 'no-store'`. This avoids mixed-content/CORS issues and keeps the upstream hidden from the browser.
+- If no URL is set, the client falls back to `/api/ocpp/stations` (`src/app/api/ocpp/stations/route.ts`), which returns **mocked Bangkok stations with some animated telemetry values** for demo/dev. Treat this route as a fixture, not a real backend.
+
+When changing the `Station` shape, update all three places: the `Station` interface in `remote-control/page.tsx`, the mock route, and the three subcomponents that consume it. `powerLimit` is normalized to a number at the page level — upstream may send it as a string.
+
+### UI kit
+
+Uses shadcn-style components (see `components.json`: `style: "new-york"`, `rsc: true`, icons: `lucide`) generated into `src/components/ui/`. The base primitives are from `@base-ui/react`, not Radix. Use `cn` from `@/lib/utils` for class merging. When adding new shadcn components, prefer the existing registry aliases (`@/components/ui`, `@/lib/utils`, `@/hooks`) rather than introducing new paths.
+
+### OCPP context
+
+`OCPP_NodeRED_Implementation.tex`/`.pdf` at the repo root document the upstream OCPP Node-RED backend the proxy talks to. Read this if you need the real station/socket data shape beyond the mock.
+
+## Antigravity Kit (AI Tooling)
+
+The `.agent/` directory contains vendored content for AI coding assistants (agents, skills, workflows).
+
+### Validation Scripts
 
 ```bash
 # Quick validation (security, lint, types, tests, UX, SEO)
@@ -54,9 +79,9 @@ python .agent/scripts/checklist.py .
 python .agent/scripts/verify_all.py . --url http://localhost:3000
 ```
 
-## Antigravity Kit Workflow Commands
+### Workflow Commands
 
-Invoke in AI chat with a slash command:
+Invoke in AI chat with a slash command (if supported):
 
 | Command | Purpose |
 |---|---|
@@ -68,4 +93,5 @@ Invoke in AI chat with a slash command:
 | `/test` | Generate and run tests |
 | `/ui-ux-pro-max` | Design with 50 visual styles |
 
-Skills are loaded automatically when task context matches — no need to reference them explicitly.
+> [!NOTE]
+> `.agent/rules/GEMINI.md` describes a specific protocol for Gemini-based agents. If you are using Claude Code, treat `.agent/` primarily as static data and follow the specific instructions in this `CLAUDE.md` file.
