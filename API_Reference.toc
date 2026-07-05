@@ -1,0 +1,65 @@
+\contentsline {section}{\numberline {1}Introduction}{3}{section.1}%
+\contentsline {subsection}{\numberline {1.1}Base URL}{3}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}Authentication}{3}{subsection.1.2}%
+\contentsline {subsection}{\numberline {1.3}Common Error Schema}{3}{subsection.1.3}%
+\contentsline {subsection}{\numberline {1.4}System Architecture Overview}{4}{subsection.1.4}%
+\contentsline {section}{\numberline {2}OCPP Charging Monitoring API}{5}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Data Models}{5}{subsection.2.1}%
+\contentsline {subsubsection}{\numberline {2.1.1}Station Object}{5}{subsubsection.2.1.1}%
+\contentsline {subsection}{\numberline {2.2}Endpoints}{5}{subsection.2.2}%
+\contentsline {subsubsection}{\numberline {2.2.1}\colorbox {evblue!20}{\texttt {\textbf {\color {evblue}GET}}}\ \ \texttt {/ocpp/stations} --- List all stations}{5}{subsubsection.2.2.1}%
+\contentsline {subsubsection}{\numberline {2.2.2}\colorbox {evblue!20}{\texttt {\textbf {\color {evblue}GET}}}\ \ \texttt {/ocpp/stations/\{id\}} --- Get single station}{6}{subsubsection.2.2.2}%
+\contentsline {subsubsection}{\numberline {2.2.3}\colorbox {emsgreen!20}{\texttt {\textbf {\color {emsgreen}POST}}}\ \ \texttt {/ocpp/stations/\{id\}/command} --- Send remote command}{6}{subsubsection.2.2.3}%
+\contentsline {subsubsection}{\numberline {2.2.4}\colorbox {cargoamber!20}{\texttt {\textbf {\color {cargoamber}PUT}}}\ \ \texttt {/ocpp/stations/\{id\}/schedule} --- Update charging schedule}{7}{subsubsection.2.2.4}%
+\contentsline {subsection}{\numberline {2.3}WebSocket --- Live Telemetry Stream}{7}{subsection.2.3}%
+\contentsline {section}{\numberline {3}Energy Management System (EMS) API}{8}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Data Models}{8}{subsection.3.1}%
+\contentsline {subsubsection}{\numberline {3.1.1}Facility Object}{8}{subsubsection.3.1.1}%
+\contentsline {subsubsection}{\numberline {3.1.2}Zone Object (EMS --- authoritative sensor record)}{8}{subsubsection.3.1.2}%
+\contentsline {subsubsection}{\numberline {3.1.3}Energy Reading Object (Time-Series)}{9}{subsubsection.3.1.3}%
+\contentsline {subsection}{\numberline {3.2}Endpoints}{9}{subsection.3.2}%
+\contentsline {subsubsection}{\numberline {3.2.1}\colorbox {evblue!20}{\texttt {\textbf {\color {evblue}GET}}}\ \ \texttt {/ems/facilities} --- List facilities}{9}{subsubsection.3.2.1}%
+\contentsline {subsubsection}{\numberline {3.2.2}\colorbox {evblue!20}{\texttt {\textbf {\color {evblue}GET}}}\ \ \texttt {/ems/facilities/\{id\}} --- Get facility details}{10}{subsubsection.3.2.2}%
+\contentsline {subsubsection}{\numberline {3.2.3}\colorbox {evblue!20}{\texttt {\textbf {\color {evblue}GET}}}\ \ \texttt {/ems/facilities/\{id\}/readings} --- Query time-series data}{10}{subsubsection.3.2.3}%
+\contentsline {subsubsection}{\numberline {3.2.4}\colorbox {evblue!20}{\texttt {\textbf {\color {evblue}GET}}}\ \ \texttt {/ems/facilities/\{id\}/analytics} --- Demand analytics}{10}{subsubsection.3.2.4}%
+\contentsline {subsubsection}{\numberline {3.2.5}\colorbox {evblue!20}{\texttt {\textbf {\color {evblue}GET}}}\ \ \texttt {/ems/facilities/\{id\}/zones} --- List zones with sensor data}{11}{subsubsection.3.2.5}%
+\contentsline {subsubsection}{\numberline {3.2.6}\colorbox {evblue!20}{\texttt {\textbf {\color {evblue}GET}}}\ \ \texttt {/ems/facilities/\{id\}/zones/\{zoneId\}} --- Single zone detail}{11}{subsubsection.3.2.6}%
+\contentsline {subsubsection}{\numberline {3.2.7}\colorbox {evblue!20}{\texttt {\textbf {\color {evblue}GET}}}\ \ \texttt {/ems/facilities/\{id\}/zones/\{zoneId\}/readings} --- Zone sensor and energy history}{11}{subsubsection.3.2.7}%
+\contentsline {subsubsection}{\numberline {3.2.8}\colorbox {cargoamber!20}{\texttt {\textbf {\color {cargoamber}PUT}}}\ \ \texttt {/ems/facilities/\{id\}/zones/\{zoneId\}/thresholds} --- Update zone thresholds}{12}{subsubsection.3.2.8}%
+\contentsline {subsubsection}{\numberline {3.2.9}\colorbox {emsgreen!20}{\texttt {\textbf {\color {emsgreen}POST}}}\ \ \texttt {/ems/facilities/\{id\}/demand-response} --- Trigger demand response}{12}{subsubsection.3.2.9}%
+\contentsline {subsubsection}{\numberline {3.2.10}\colorbox {cargoamber!20}{\texttt {\textbf {\color {cargoamber}PUT}}}\ \ \texttt {/ems/facilities/\{id\}/power-limit} --- Set import limit}{12}{subsubsection.3.2.10}%
+\contentsline {subsection}{\numberline {3.3}WebSocket --- Live Energy Feed}{13}{subsection.3.3}%
+\contentsline {section}{\numberline {4}Cargo Space Monitoring API}{14}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Data Models}{14}{subsection.4.1}%
+\contentsline {subsubsection}{\numberline {4.1.1}Truck Object}{14}{subsubsection.4.1.1}%
+\contentsline {subsubsection}{\numberline {4.1.2}Route Object}{14}{subsubsection.4.1.2}%
+\contentsline {subsubsection}{\numberline {4.1.3}Trip Object}{15}{subsubsection.4.1.3}%
+\contentsline {subsubsection}{\numberline {4.1.4}Station Object}{15}{subsubsection.4.1.4}%
+\contentsline {subsection}{\numberline {4.2}Truck Endpoints}{16}{subsection.4.2}%
+\contentsline {subsubsection}{\numberline {4.2.1}\colorbox {evblue!20}{\texttt {\textbf {\color {evblue}GET}}}\ \ \texttt {/cargo/trucks} --- Live truck map data}{16}{subsubsection.4.2.1}%
+\contentsline {subsubsection}{\numberline {4.2.2}\colorbox {evblue!20}{\texttt {\textbf {\color {evblue}GET}}}\ \ \texttt {/cargo/trucks/\{id\}} --- Get single truck}{16}{subsubsection.4.2.2}%
+\contentsline {subsubsection}{\numberline {4.2.3}\colorbox {evblue!20}{\texttt {\textbf {\color {evblue}GET}}}\ \ \texttt {/cargo/trucks/\{id\}/trips} --- Truck trip history}{16}{subsubsection.4.2.3}%
+\contentsline {subsection}{\numberline {4.3}Route Endpoints}{17}{subsection.4.3}%
+\contentsline {subsubsection}{\numberline {4.3.1}\colorbox {evblue!20}{\texttt {\textbf {\color {evblue}GET}}}\ \ \texttt {/cargo/routes} --- List routes}{17}{subsubsection.4.3.1}%
+\contentsline {subsubsection}{\numberline {4.3.2}\colorbox {evblue!20}{\texttt {\textbf {\color {evblue}GET}}}\ \ \texttt {/cargo/routes/\{id\}} --- Route details}{17}{subsubsection.4.3.2}%
+\contentsline {subsubsection}{\numberline {4.3.3}\colorbox {evblue!20}{\texttt {\textbf {\color {evblue}GET}}}\ \ \texttt {/cargo/routes/\{id\}/trips} --- Trips for a route}{17}{subsubsection.4.3.3}%
+\contentsline {subsection}{\numberline {4.4}Trip Endpoints}{18}{subsection.4.4}%
+\contentsline {subsubsection}{\numberline {4.4.1}\colorbox {evblue!20}{\texttt {\textbf {\color {evblue}GET}}}\ \ \texttt {/cargo/trips} --- Search trips}{18}{subsubsection.4.4.1}%
+\contentsline {subsubsection}{\numberline {4.4.2}\colorbox {evblue!20}{\texttt {\textbf {\color {evblue}GET}}}\ \ \texttt {/cargo/trips/\{id\}} --- Get full trip detail}{18}{subsubsection.4.4.2}%
+\contentsline {subsection}{\numberline {4.5}Planning Analytics Endpoints}{18}{subsection.4.5}%
+\contentsline {subsubsection}{\numberline {4.5.1}\colorbox {evblue!20}{\texttt {\textbf {\color {evblue}GET}}}\ \ \texttt {/cargo/analytics/utilization} --- Load utilization over time}{18}{subsubsection.4.5.1}%
+\contentsline {subsubsection}{\numberline {4.5.2}\colorbox {evblue!20}{\texttt {\textbf {\color {evblue}GET}}}\ \ \texttt {/cargo/analytics/planning} --- Fleet planning recommendations}{19}{subsubsection.4.5.2}%
+\contentsline {subsubsection}{\numberline {4.5.3}\colorbox {evblue!20}{\texttt {\textbf {\color {evblue}GET}}}\ \ \texttt {/cargo/analytics/load-history} --- Load trend with photos}{20}{subsubsection.4.5.3}%
+\contentsline {subsection}{\numberline {4.6}Station Endpoints}{21}{subsection.4.6}%
+\contentsline {subsubsection}{\numberline {4.6.1}\colorbox {evblue!20}{\texttt {\textbf {\color {evblue}GET}}}\ \ \texttt {/cargo/stations} --- List stations}{21}{subsubsection.4.6.1}%
+\contentsline {subsubsection}{\numberline {4.6.2}\colorbox {evblue!20}{\texttt {\textbf {\color {evblue}GET}}}\ \ \texttt {/cargo/stations/\{id\}} --- Get station}{21}{subsubsection.4.6.2}%
+\contentsline {subsection}{\numberline {4.7}Alert Endpoints}{21}{subsection.4.7}%
+\contentsline {subsubsection}{\numberline {4.7.1}\colorbox {evblue!20}{\texttt {\textbf {\color {evblue}GET}}}\ \ \texttt {/cargo/alerts} --- List active alerts}{21}{subsubsection.4.7.1}%
+\contentsline {subsubsection}{\numberline {4.7.2}\colorbox {emsgreen!20}{\texttt {\textbf {\color {emsgreen}POST}}}\ \ \texttt {/cargo/alerts/\{alertId\}/acknowledge} --- Acknowledge alert}{21}{subsubsection.4.7.2}%
+\contentsline {subsection}{\numberline {4.8}WebSocket --- Live Cargo and Fleet Feed}{22}{subsection.4.8}%
+\contentsline {section}{\numberline {5}Cross-System Integration}{23}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Smart Charging with EMS}{23}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Station Energy and Cargo Operations (EMS + Cargo)}{23}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}Cold-Chain Alert to Fleet Dispatch}{24}{subsection.5.3}%
+\contentsline {subsection}{\numberline {5.4}Shared Webhook Contract}{24}{subsection.5.4}%
+\contentsline {section}{\numberline {6}API Quick Reference}{25}{section.6}%
