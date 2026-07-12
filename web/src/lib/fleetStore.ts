@@ -222,20 +222,8 @@ export const fleetStore = {
     const now = Date.now();
     let modified = false;
 
-    // Filter out trucks that haven't been seen for more than 60 seconds
-    const activeTrucks = trucks.filter(t => {
-      if (!t.lastSeen) return true; 
-      const lastSeenTime = new Date(t.lastSeen).getTime();
-      const diffSeconds = (now - lastSeenTime) / 1000;
-      if (diffSeconds > 60) {
-        modified = true;
-        return false;
-      }
-      return true;
-    });
-
     // Gray out trucks that haven't been seen for more than 30 seconds
-    const decayedTrucks = activeTrucks.map(t => {
+    const decayedTrucks = trucks.map(t => {
       if (!t.lastSeen) return t;
       const lastSeenTime = new Date(t.lastSeen).getTime();
       const diffSeconds = (now - lastSeenTime) / 1000;
