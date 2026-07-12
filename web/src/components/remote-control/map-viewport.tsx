@@ -118,29 +118,32 @@ export const MapViewport = forwardRef(({
 
   // --- Truck Icons (red parcel truck) ---
   const createTruckIcon = (truck: Truck, isSelected: boolean) => {
-    const ring = isSelected ? "rgba(255,255,255,1)" : "rgba(255,255,255,0.3)";
-    const truckColor = "#ef4444"; // always red
-    const glowSize = isSelected ? "15px" : "6px";
+    const isOffline = truck.status === "Offline";
+    const ring = isSelected ? "rgba(255,255,255,1)" : isOffline ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.3)";
+    const truckColor = isOffline ? "#4b5563" : "#ef4444"; 
+    const glowSize = isOffline ? "0px" : isSelected ? "15px" : "6px";
 
     // Parcel truck SVG — side-view delivery truck silhouette
     const truckSvg = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M1 12.5V17a1 1 0 001 1h1.05a2.5 2.5 0 004.9 0h6.1a2.5 2.5 0 004.9 0H20a1 1 0 001-1v-5a1 1 0 00-.3-.7l-3-3A1 1 0 0017 8h-2V6a1 1 0 00-1-1H3a1 1 0 00-1 1v6.5z" fill="${truckColor}"/>
-      <path d="M15 8h2l3 3v4h-5V8z" fill="#b91c1c"/>
+      <path d="M15 8h2l3 3v4h-5V8z" fill="${isOffline ? "#374151" : "#b91c1c"}"/>
       <circle cx="5.5" cy="18" r="1.5" fill="#1e293b" stroke="${truckColor}" stroke-width="0.5"/>
       <circle cx="17.5" cy="18" r="1.5" fill="#1e293b" stroke="${truckColor}" stroke-width="0.5"/>
-      <rect x="2" y="7" width="5" height="3" rx="0.5" fill="#fca5a5" opacity="0.6"/>
-      <rect x="8" y="7" width="4" height="3" rx="0.5" fill="#fca5a5" opacity="0.4"/>
+      <rect x="2" y="7" width="5" height="3" rx="0.5" fill="${isOffline ? "#6b7280" : "#fca5a5"}" opacity="0.6"/>
+      <rect x="8" y="7" width="4" height="3" rx="0.5" fill="${isOffline ? "#6b7280" : "#fca5a5"}" opacity="0.4"/>
     </svg>`;
 
     return L.divIcon({
       className: "custom-leaflet-marker",
       html: `<div class="relative flex flex-col items-center">
-        ${isSelected ? '<div class="absolute -inset-6 bg-red-400/15 blur-xl rounded-full"></div>' : ""}
+        ${isSelected && !isOffline ? '<div class="absolute -inset-6 bg-red-400/15 blur-xl rounded-full"></div>' : ""}
         <div class="flex items-center justify-center rounded-xl shadow-2xl ring-2 transition-all duration-500 ${isSelected ? "scale-125 z-40" : "hover:scale-110"}"
              style="width:46px;height:36px;background:rgba(8,19,38,0.92);border:2px solid ${ring};box-shadow:0 0 ${glowSize} ${truckColor}55;">
           ${truckSvg}
         </div>
-        <div class="mt-1 px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-wider" style="background:rgba(8,19,38,0.85);color:${truckColor};border:1px solid ${truckColor}33;">${truck.speed}km/h</div>
+        <div class="mt-1 px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-wider" style="background:rgba(8,19,38,0.85);color:${truckColor};border:1px solid ${truckColor}33;">
+          ${isOffline ? "OFFLINE" : `${truck.speed}km/h`}
+        </div>
       </div>`,
       iconSize: [46, 52],
       iconAnchor: [23, 18],
@@ -149,7 +152,7 @@ export const MapViewport = forwardRef(({
 
   // Route polyline color
   const routeColor = (status: string) =>
-    status === "En Route" ? "#3b82f6" : status === "Returning" ? "#22d3ee" : "#fbbf2480";
+    status === "En Route" ? "#3b82f6" : status === "Returning" ? "#22d3ee" : status === "Offline" ? "#4b5563" : "#fbbf2480";
 
   return (
     <div className="absolute inset-0 z-0 bg-[#081326]">

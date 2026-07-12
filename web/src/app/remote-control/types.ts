@@ -80,7 +80,8 @@ export interface Truck {
   driverName: string;
   lat: number;
   lng: number;
-  status: "En Route" | "Idle" | "Loading" | "Returning" | "Maintenance";
+  status: "En Route" | "Idle" | "Loading" | "Returning" | "Maintenance" | "Offline";
+  lastSeen?: string;
   loadLevel: LoadLevel;       // 0-5 (6 discrete levels)
   loadPercent: number;        // 0-100
   speed: number;              // km/h
@@ -90,4 +91,19 @@ export interface Truck {
   parcelsCapacity: number;
   parcelsAvailable: number;   // capacity remaining
   containerImages: string[];  // URLs to sample images of container interior
+  obd?: {
+    rpm: number;
+    engineLoadPct: number;
+    coolantTempC: number;
+    fuelLevelPct: number;
+    throttlePct: number;
+    dtcCount: number;
+    mil: boolean;
+  };
+  device?: {
+    battV: number;
+    signalDbm: number;
+    seqNo: number;
+    clkSource: string;
+  };
 }

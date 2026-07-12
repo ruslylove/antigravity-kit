@@ -23,7 +23,9 @@ import {
   Package,
   Eye,
   EyeOff,
+  Terminal,
 } from "lucide-react";
+import { DevLogsConsole } from "@/components/remote-control/dev-logs-console";
 
 // Re-export Station for backward compatibility
 export type { Station } from "./types";
@@ -38,6 +40,7 @@ export default function RemoteControlPage() {
   const [sidebarWidth, setSidebarWidth] = useState<number>(320); // Desktop sidebar width (minimized by default)
   const [isResizing, setIsResizing] = useState<boolean>(false);
   const [mounted, setMounted] = useState<boolean>(false);
+  const [isLogsOpen, setIsLogsOpen] = useState<boolean>(false);
 
   // --- Domain / Layer State ---
   const [activeDomain, setActiveDomain] = useState<DomainType>("EV");
@@ -338,6 +341,15 @@ export default function RemoteControlPage() {
             </div>
 
             <button
+              onClick={() => setIsLogsOpen(true)}
+              className="glass px-3.5 h-10 md:h-11 rounded-2xl flex items-center gap-2 pointer-events-auto border border-white/10 hover:bg-white/10 transition-all active:scale-95"
+              title="Open Dev Console"
+            >
+              <Terminal size={14} className="text-cyan-400" />
+              <span className="hidden lg:inline text-[10px] font-black uppercase tracking-wider text-cyan-400">Dev Logs</span>
+            </button>
+
+            <button
               onClick={toggleFullscreen}
               className="hidden md:flex glass w-11 h-11 rounded-2xl items-center justify-center pointer-events-auto border border-white/10 hover:bg-white/10 transition-all active:scale-95"
             >
@@ -421,6 +433,9 @@ export default function RemoteControlPage() {
           </div>
         </div>
       </div>
+
+      {/* Developer Logs Console Overlay */}
+      <DevLogsConsole isOpen={isLogsOpen} onClose={() => setIsLogsOpen(false)} />
     </div>
   );
 }

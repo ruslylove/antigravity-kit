@@ -19,5 +19,8 @@
     "templates"
   ],
   "author": "vudovn",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "mqtt": "^5.15.2"
+  }
 }

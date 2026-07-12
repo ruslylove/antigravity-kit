@@ -66,6 +66,7 @@ export function FleetOverlay({
       case "Loading": return "text-amber-400";
       case "Idle": return "text-siam-green";
       case "Maintenance": return "text-red-500";
+      case "Offline": return "text-white/30";
       default: return "text-white/50";
     }
   };
@@ -77,6 +78,7 @@ export function FleetOverlay({
       case "Loading": return "bg-amber-400/20 text-amber-400";
       case "Idle": return "bg-siam-green/20 text-siam-green";
       case "Maintenance": return "bg-red-500/20 text-red-400";
+      case "Offline": return "bg-white/5 text-white/30";
       default: return "bg-white/10 text-white/40";
     }
   };
@@ -213,15 +215,55 @@ export function FleetOverlay({
 }
 
 function SelectedTruckDetail({ truck, statusColor }: { truck: Truck; statusColor: (s: string) => string }) {
-  const [imgIndex, setImgIndex] = useState(0);
+  const [pairIndex, setPairIndex] = useState(0);
+
+  React.useEffect(() => {
+    setPairIndex(0);
+  }, [truck.id]);
+
   const hasImages = truck.containerImages.length > 0;
+
+  // 1. Limit to the last 4 photos
+  const last4Images = truck.containerImages.slice(0, 4);
+
+  // 2. Parse and group images by timestamp (or fallback if no timestamp)
+  const groupedPhotos: { timestamp: number; dateStr: string; front?: string; rear?: string }[] = [];
+  
+  last4Images.forEach((url) => {
+    const match = url.match(/-(cargo-front|cargo-rear)-(\d+)\.jpg$/);
+    if (match) {
+      const camera = match[1];
+      const timestamp = Number(match[2]);
+      const dateStr = new Date(timestamp * 1000).toLocaleString([], { dateStyle: 'short', timeStyle: 'medium' });
+      
+      let group = groupedPhotos.find((g) => g.timestamp === timestamp);
+      if (!group) {
+        group = { timestamp, dateStr };
+        groupedPhotos.push(group);
+      }
+      if (camera === "cargo-front") {
+        group.front = url;
+      } else {
+        group.rear = url;
+      }
+    } else {
+      groupedPhotos.push({
+        timestamp: 0,
+        dateStr: "Static Asset",
+        front: url
+      });
+    }
+  });
+
+  const activePairIndex = Math.min(groupedPhotos.length - 1, pairIndex);
+  const activePair = groupedPhotos[activePairIndex];
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <span className="relative flex w-2.5 h-2.5">
-            <span className={`relative inline-flex rounded-full w-2.5 h-2.5 shadow-lg ${truck.status === "En Route" ? "bg-blue-500" : truck.status === "Returning" ? "bg-cyan-400" : truck.status === "Loading" ? "bg-amber-400" : truck.status === "Idle" ? "bg-siam-green" : "bg-red-500"}`} />
+            <span className={`relative inline-flex rounded-full w-2.5 h-2.5 shadow-lg ${truck.status === "En Route" ? "bg-blue-500" : truck.status === "Returning" ? "bg-cyan-400" : truck.status === "Loading" ? "bg-amber-400" : truck.status === "Idle" ? "bg-siam-green" : truck.status === "Offline" ? "bg-white/20" : "bg-red-500"}`} />
           </span>
           <span className="text-[9px] font-black tracking-widest text-white/50 uppercase ml-1">{truck.driverName}</span>
         </div>
@@ -304,31 +346,133 @@ function SelectedTruckDetail({ truck, statusColor }: { truck: Truck; statusColor
         </div>
       )}
 
+      {/* Hardware Telemetry Diagnostics */}
+      {truck.obd && (
+        <div className="glass-panel p-5 rounded-2xl ring-1 ring-white/10 bg-white/[0.04] shadow-2xl mb-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="flex items-center gap-2 mb-4">
+            <Activity size={12} className="text-cyan-400" />
+            <span className="text-[9px] font-black tracking-[0.2em] text-white/60 uppercase">Telemetry Diagnostics</span>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-3 text-left">
+            <div className="border-r border-white/5 pr-2">
+              <span className="text-[8px] text-white/40 font-black uppercase tracking-widest block mb-0.5">Engine RPM</span>
+              <span className="text-[12px] font-black text-white">{truck.obd.rpm} <span className="text-[8px] text-white/30">rpm</span></span>
+            </div>
+            
+            <div className="pl-2">
+              <span className="text-[8px] text-white/40 font-black uppercase tracking-widest block mb-0.5">Engine Load</span>
+              <span className="text-[12px] font-black text-white">{truck.obd.engineLoadPct}%</span>
+            </div>
+
+            <div className="border-r border-white/5 pr-2 pt-2 border-t">
+              <span className="text-[8px] text-white/40 font-black uppercase tracking-widest block mb-0.5">Coolant Temp</span>
+              <span className="text-[12px] font-black text-white">{truck.obd.coolantTempC} <span className="text-[8px] text-white/30">°C</span></span>
+            </div>
+
+            <div className="pl-2 pt-2 border-t">
+              <span className="text-[8px] text-white/40 font-black uppercase tracking-widest block mb-0.5">Throttle Position</span>
+              <span className="text-[12px] font-black text-white">{truck.obd.throttlePct}%</span>
+            </div>
+
+            <div className="border-r border-white/5 pr-2 pt-2 border-t">
+              <span className="text-[8px] text-white/40 font-black uppercase tracking-widest block mb-0.5">Diagnostics (DTC)</span>
+              {truck.obd.mil || truck.obd.dtcCount > 0 ? (
+                <span className="text-[11px] font-black text-red-400 uppercase tracking-tighter">
+                  ⚠ FAULT ({truck.obd.dtcCount} codes)
+                </span>
+              ) : (
+                <span className="text-[11px] font-black text-siam-green uppercase tracking-tighter">
+                  ✔ SYSTEM OK
+                </span>
+              )}
+            </div>
+
+            <div className="pl-2 pt-2 border-t">
+              <span className="text-[8px] text-white/40 font-black uppercase tracking-widest block mb-0.5">Signal Strength</span>
+              <span className="text-[12px] font-black text-white">{truck.device?.signalDbm || -85} <span className="text-[8px] text-white/30">dBm</span></span>
+            </div>
+
+            <div className="border-r border-white/5 pr-2 pt-2 border-t">
+              <span className="text-[8px] text-white/40 font-black uppercase tracking-widest block mb-0.5">Device Voltage</span>
+              <span className="text-[12px] font-black text-white">{truck.device?.battV || 12.8} <span className="text-[8px] text-white/30">V</span></span>
+            </div>
+
+            <div className="pl-2 pt-2 border-t">
+              <span className="text-[8px] text-white/40 font-black uppercase tracking-widest block mb-0.5">Sync Source</span>
+              <span className="text-[12px] font-black text-white uppercase">{truck.device?.clkSource || "GPS"}</span>
+            </div>
+          </div>
+
+          <div className="mt-3 pt-3 border-t border-white/5 flex justify-between items-center text-[8px] font-mono text-white/30">
+            <span>SEQUENCE: #{truck.device?.seqNo || 0}</span>
+            <span>CLOCK: UTC SECONDS</span>
+          </div>
+        </div>
+      )}
+
       {/* Container Images */}
       {hasImages && (
         <div className="glass-panel p-4 rounded-2xl ring-1 ring-white/10 bg-white/[0.04] shadow-2xl mb-5">
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <ImageIcon size={12} className="text-cyan-400" />
-              <span className="text-[9px] font-black tracking-[0.2em] text-white/60 uppercase">Container View</span>
+            <div className="flex flex-col min-w-0">
+              <div className="flex items-center gap-2">
+                <ImageIcon size={12} className="text-cyan-400" />
+                <span className="text-[9px] font-black tracking-[0.2em] text-white/60 uppercase">Container View</span>
+              </div>
+              {activePair && activePair.timestamp > 0 && (
+                <span className="text-[9px] font-mono text-cyan-400/80 mt-1 truncate">
+                  {activePair.dateStr}
+                </span>
+              )}
             </div>
-            {truck.containerImages.length > 1 && (
+            {groupedPhotos.length > 1 && (
               <div className="flex gap-1">
-                <button onClick={() => setImgIndex((prev) => Math.max(0, prev - 1))} className="w-6 h-6 rounded bg-white/5 flex items-center justify-center text-white/40 hover:text-white active:scale-90"><ChevronLeft size={12} /></button>
-                <button onClick={() => setImgIndex((prev) => Math.min(truck.containerImages.length - 1, prev + 1))} className="w-6 h-6 rounded bg-white/5 flex items-center justify-center text-white/40 hover:text-white active:scale-90"><ChevronRight size={12} /></button>
+                <button onClick={() => setPairIndex((prev) => Math.max(0, prev - 1))} className="w-6 h-6 rounded bg-white/5 flex items-center justify-center text-white/40 hover:text-white active:scale-90"><ChevronLeft size={12} /></button>
+                <button onClick={() => setPairIndex((prev) => Math.min(groupedPhotos.length - 1, prev + 1))} className="w-6 h-6 rounded bg-white/5 flex items-center justify-center text-white/40 hover:text-white active:scale-90"><ChevronRight size={12} /></button>
               </div>
             )}
           </div>
-          <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black/40">
-            <img
-              src={truck.containerImages[imgIndex]}
-              alt={`Container interior ${imgIndex + 1}`}
-              className="w-full h-full object-cover transition-opacity duration-300"
-            />
-            <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded bg-black/60 text-[8px] font-black text-white/60">
-              {imgIndex + 1} / {truck.containerImages.length}
+          
+          <div className="grid grid-cols-2 gap-2">
+            {/* Front Camera */}
+            <div className="flex flex-col gap-1 min-w-0">
+              <span className="text-[8px] font-black text-white/40 uppercase tracking-widest text-center truncate">Cargo Front</span>
+              <div className="relative aspect-[4/3] rounded-lg overflow-hidden bg-black/40 border border-white/5 flex items-center justify-center">
+                {activePair?.front ? (
+                  <img
+                    src={activePair.front}
+                    alt="Cargo Front view"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-[9px] text-white/20">No Image</span>
+                )}
+              </div>
+            </div>
+
+            {/* Rear Camera */}
+            <div className="flex flex-col gap-1 min-w-0">
+              <span className="text-[8px] font-black text-white/40 uppercase tracking-widest text-center truncate">Cargo Rear</span>
+              <div className="relative aspect-[4/3] rounded-lg overflow-hidden bg-black/40 border border-white/5 flex items-center justify-center">
+                {activePair?.rear ? (
+                  <img
+                    src={activePair.rear}
+                    alt="Cargo Rear view"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-[9px] text-white/20">No Image</span>
+                )}
+              </div>
             </div>
           </div>
+          
+          {groupedPhotos.length > 1 && (
+            <div className="mt-2 text-center text-[8px] font-black text-white/30">
+              Departure {activePairIndex + 1} / {groupedPhotos.length}
+            </div>
+          )}
         </div>
       )}
 
