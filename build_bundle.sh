@@ -3,21 +3,21 @@ set -e
 
 echo "📦 Cleaning local build caches..."
 rm -rf web/.next deploy_v16 dashboard_bundle_v16.tar.gz
-mkdir -p deploy_v16/web
+mkdir -p deploy_v16
 
 echo "🚀 Building Next.js application..."
 cd web
 npm run build
 cd ..
 
-echo "📂 Copying build artifacts to deploy_v16/web..."
-# Copy standalone files (using -R to handle symlinks and directories)
-cp -R web/.next/standalone/web/ deploy_v16/web/
+echo "📂 Copying build artifacts to deploy_v16..."
+# Copy standalone folder structure exactly as built
+cp -R web/.next/standalone/ deploy_v16/
 
 echo "📂 Copying static and public folders..."
-# Copy next.js static directory (required for UI styling/scripts)
+# Copy next.js static directory
 cp -R web/.next/static deploy_v16/web/.next/
-# Copy public directory (required for images/logo assets)
+# Copy public directory
 cp -R web/public deploy_v16/web/
 
 echo "🗜️ Creating archive dashboard_bundle_v16.tar.gz..."

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
+import Link from "next/link";
 import {
   Truck as TruckIcon,
   MapPin,
@@ -110,10 +111,34 @@ export function FleetOverlay({
       {/* Content Area */}
       <section className="flex-1 space-y-5 overflow-y-auto no-scrollbar">
         {activeTab === "SETTINGS" ? (
-          <div className="text-center py-12">
-            <Settings size={32} className="mx-auto text-white/10 mb-4" />
-            <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">Fleet Settings</p>
-            <p className="text-[9px] text-white/10 mt-2">Configure GPS polling, route optimization, alerts</p>
+          <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-500">
+            <div className="flex items-center gap-4 mb-2 opacity-80">
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent to-white/20" />
+              <span className="text-[9px] font-black tracking-[0.4em] text-white/50 uppercase">Configuration</span>
+              <div className="flex-1 h-px bg-gradient-to-l from-transparent to-white/20" />
+            </div>
+
+            <div className="glass-panel p-5 rounded-2xl border border-white/5 space-y-4">
+              <div className="text-center pb-2 border-b border-white/5">
+                <Settings size={28} className="mx-auto text-cyan-400 mb-2" />
+                <h3 className="text-xs font-black text-white uppercase tracking-wider">Control Panel Settings</h3>
+                <p className="text-[9px] text-white/40 mt-1">Configure live trackers, map routing protocols, and integrations.</p>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-[8px] font-black text-white/30 uppercase tracking-widest">Administrative Actions</p>
+                <Link
+                  href="/admin/routes"
+                  className="flex items-center justify-between p-3.5 rounded-xl bg-cyan-500/5 border border-cyan-500/20 hover:bg-cyan-500/10 hover:border-cyan-500/35 transition group"
+                >
+                  <div className="text-left">
+                    <p className="text-[10px] font-black text-white uppercase tracking-wide group-hover:text-cyan-400 transition">Manage Fleet Routes</p>
+                    <p className="text-[8px] text-white/40 font-medium">CRUD route itineraries and link to EV trucks.</p>
+                  </div>
+                  <span className="text-[10px] font-black text-cyan-400 bg-cyan-500/10 px-2 py-1 rounded border border-cyan-500/20 group-hover:bg-cyan-500 group-hover:text-slate-950 transition">Open</span>
+                </Link>
+              </div>
+            </div>
           </div>
         ) : activeTab === "LOGS" ? (
           <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-500">

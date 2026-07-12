@@ -91,18 +91,18 @@ export async function POST(
 
     // 4. Update the shared fleet state
     const publicUrl = `/uploads/${filename}`;
-    const updated = fleetStore.addPhotoToTruck(truckId, publicUrl);
+    const updated = await fleetStore.addPhotoToTruck(truckId, publicUrl);
 
     if (!updated) {
       // Clean up the file if truck does not exist in store
       await fs.unlink(filePath).catch(() => {});
-      logStore.addLog("HTTP", "WARN", `POST /v1/trucks/${truckId}/photos - Failed: Truck ID not found in fleet store`, headerDetails);
+      await logStore.addLog("HTTP", "WARN", `POST /v1/trucks/${truckId}/photos - Failed: Truck ID not found in fleet store`, headerDetails);
       return NextResponse.json({ error: `Truck with ID '${truckId}' not found` }, { status: 404 });
     }
 
     // 5. Respond with documented JSON payload
     const photoId = `photo-${sanitizedId}-${sanitizedCamera}-${sanitizedTimestamp}`;
-    logStore.addLog("HTTP", "INFO", `POST /v1/trucks/${truckId}/photos - Photo saved and registered`, {
+    await logStore.addLog("HTTP", "INFO", `POST /v1/trucks/${truckId}/photos - Photo saved and registered`, {
       photoId,
       filename,
       sizeBytes: buffer.length,

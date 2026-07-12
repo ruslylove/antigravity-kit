@@ -1,0 +1,127 @@
+export interface StationData {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  status: string;
+  powerLimit: string;
+  socketStatus: string;
+  currentMeter: number;
+  powerOutput: number;
+}
+
+export function getBaseStations(): StationData[] {
+  const now = new Date();
+  return [
+    {
+      id: "station-bkk-001",
+      name: "Siam Paragon Hub",
+      lat: 13.7462,
+      lng: 100.5347,
+      status: "Available",
+      powerLimit: "150kW",
+      socketStatus: "Available",
+      currentMeter: 0,
+      powerOutput: 0
+    },
+    {
+      id: "station-bkk-002",
+      name: "Sukhumvit 21 Fast",
+      lat: 13.7410,
+      lng: 100.5600,
+      status: "Charging",
+      powerLimit: "75kW",
+      socketStatus: "Occupied",
+      currentMeter: 42.15 + (Math.sin(now.getTime() / 10000) * 5),
+      powerOutput: 68.4 + (Math.random() * 2) 
+    },
+    {
+      id: "station-bkk-003",
+      name: "Lumphini Park Charging",
+      lat: 13.7310,
+      lng: 100.5410,
+      status: "Faulted",
+      powerLimit: "120kW",
+      socketStatus: "Out of Service",
+      currentMeter: 12.8,
+      powerOutput: 0
+    },
+    {
+      id: "station-bkk-004",
+      name: "Bangkok Old Town Hub",
+      lat: 13.7530,
+      lng: 100.4930,
+      status: "Available",
+      powerLimit: "350kW",
+      socketStatus: "Available",
+      currentMeter: 0,
+      powerOutput: 0
+    },
+    {
+      id: "station-bkk-005",
+      name: "Bangna Complex Ultra-Fast",
+      lat: 13.6605,
+      lng: 100.6355,
+      status: "Charging",
+      powerLimit: "250kW",
+      socketStatus: "Occupied",
+      currentMeter: 125.4,
+      powerOutput: 210.5 + (Math.random() * 5)
+    },
+    {
+      id: "station-bkk-006",
+      name: "Lat Krabang Factory Charger",
+      lat: 13.7240,
+      lng: 100.7485,
+      status: "Available",
+      powerLimit: "150kW",
+      socketStatus: "Available",
+      currentMeter: 0,
+      powerOutput: 0
+    },
+    {
+      id: "station-bkk-007",
+      name: "Chatuchak Depot Fleet Charge",
+      lat: 13.7985,
+      lng: 100.5520,
+      status: "Charging",
+      powerLimit: "350kW",
+      socketStatus: "Occupied",
+      currentMeter: 312.8,
+      powerOutput: 335.2 + (Math.random() * 4)
+    },
+    {
+      id: "station-bkk-008",
+      name: "Sukhumvit Distro Station",
+      lat: 13.7275,
+      lng: 100.5690,
+      status: "Reserved",
+      powerLimit: "75kW",
+      socketStatus: "Reserved",
+      currentMeter: 0,
+      powerOutput: 0
+    },
+    {
+      id: "station-bkk-009",
+      name: "Don Mueang Airport Terminal",
+      lat: 13.9126,
+      lng: 100.5967,
+      status: "Charging",
+      powerLimit: "120kW",
+      socketStatus: "Occupied",
+      currentMeter: 84.1,
+      powerOutput: 110.4 + (Math.random() * 3)
+    },
+    {
+      id: "station-bkk-010",
+      name: "Mega Bangna Supercharger",
+      lat: 13.6468,
+      lng: 100.6797,
+      status: "Faulted",
+      powerLimit: "350kW",
+      socketStatus: "Out of Service",
+      currentMeter: 45.2,
+      powerOutput: 0
+    }
+  ];
+}

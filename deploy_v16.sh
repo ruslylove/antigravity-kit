@@ -24,24 +24,6 @@ sshpass -p "$REMOTE_PASS" scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=
 
 # 3. Extract and Restart
 echo "📦 Extracting bundle and restarting service..."
-sshpass -p "$REMOTE_PASS" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$REMOTE_USER@$REMOTE_HOST" << EOF
-  cd $REMOTE_PATH
-  # Extract bundle
-  tar -xzvf $BUNDLE_NAME
-  # Sync all files including hidden (.next) files to the main directory
-  cp -R deploy_v16/web/. .
-  # Cleanup local deploy folder and tarball
-  rm -rf deploy_v16 $BUNDLE_NAME
-  
-  # Register/restart PM2 process
-  if pm2 show siam-ev-dashboard > /dev/null 2>&1; then
-    echo "🔄 PM2 process exists. Restarting..."
-    pm2 restart siam-ev-dashboard
-  else
-    echo "🆕 PM2 process does not exist. Starting for the first time on port 3000..."
-    PORT=3000 pm2 start server.js --name siam-ev-dashboard
-  fi
-  pm2 save
-EOF
+sshpass -p "$REMOTE_PASS" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$REMOTE_USER@$REMOTE_HOST" "cd $REMOTE_PATH && tar -xzvf $BUNDLE_NAME && cp -R deploy_v16/. . && rm -rf deploy_v16 $BUNDLE_NAME && (pm2 delete siam-ev-dashboard || true) && PORT=3000 pm2 start web/server.js --name siam-ev-dashboard && pm2 save"
 
 echo "✅ Deployment Successful!"
