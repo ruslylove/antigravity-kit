@@ -184,6 +184,8 @@ X-Request-ID  & No  & Idempotency key; echoed in response headers\\
   "plateNumber":   "GKh-1234",
   "name":          "Truck 07",
   "type":          "StraightTruck",  // StraightTruck | Trailer | Refrigerated | Van
+  "powertrain":    "Electric",       // Electric | Diesel | Hybrid
+  "energyConsumptionKwhPerKm": 1.35, // rated avg consumption; Electric/Hybrid only, else null
   "capacityCbm":   40,
   "status":        "InTransit",      // Idle | InTransit | Loading | Unloading | Offline
   "currentLoadPct": 72,              // 0-100; from load sensor in cargo bay
@@ -213,6 +215,12 @@ X-Request-ID  & No  & Idempotency key; echoed in response headers\\
 \bottomrule
 \end{tabular}
 \end{center}
+
+\noindent\textbf{Note on \texttt{powertrain} / \texttt{energyConsumptionKwhPerKm}:} these fields
+identify Electric and Hybrid trucks and their rated energy-consumption rate, and are the
+inputs the Cargo Carbon Emissions endpoint (Section~\ref{sec:carbon-emissions}) uses to
+compute vehicle-use emissions. \texttt{energyConsumptionKwhPerKm} is \texttt{null} for
+Diesel trucks.
 
 \subsection{Route Object}
 
@@ -258,6 +266,8 @@ A cargo photo is captured automatically on each \texttt{DoorClose} event
   "scheduledDepartureAt": "2026-07-02T08:00:00Z",
   "actualDepartureAt":    "2026-07-02T08:07:00Z",
   "actualArrivalAt":      null,  // null while InProgress
+  "distanceTraveledKm":   null,  // actual GPS-tracked distance; finalized when status = Completed
+  "energyConsumedKwh":    null,  // actual traction energy used; Electric/Hybrid trucks only, else null
   "events": [
     {
       "eventId":    "evt-tr-0041-001",
@@ -678,6 +688,97 @@ limit    & integer  & No  & Max events returned (default 100)\\
 \newpage
 
 % ==============================================================================
+\section{Carbon Emissions \& Reduction Endpoints}
+\label{sec:carbon-emissions}
+% ==============================================================================
+
+The Cargo sub-system owns the raw driving data --- distance and, for Electric/Hybrid
+trucks, energy consumption (Section~2.1) --- needed to calculate vehicle-use carbon
+emissions and the emission reduction achieved versus an equivalent internal-combustion
+(ICE) truck. It does \emph{not} own the emission-factor reference values themselves
+(grid carbon intensity, ICE baseline rate); those are owned by SIAM EV's internal
+Carbon Credit / EMS system and must be supplied by the caller as query parameters on
+each request. Charging-session emissions and building/facility emissions are computed
+entirely within the EMS and are not exposed via the Cargo API --- see
+Section~\ref{sec:integration-notes}.
+
+\subsection{\GET\ \ \texttt{/cargo/analytics/carbon-emissions} --- Vehicle-use emissions and reduction}
+
+Aggregates distance and energy consumption for Electric/Hybrid trucks over a time
+window and applies caller-supplied emission factors to compute emissions and the
+reduction versus an ICE baseline.
+
+\textbf{Query parameters:}
+
+\begin{center}
+\begin{tabular}{>{\ttfamily}llll}
+\toprule
+\textbf{Param} & \textbf{Type} & \textbf{Required} & \textbf{Description}\\
+\midrule
+from   & ISO-8601 & Yes & Start of analysis window\\
+to     & ISO-8601 & Yes & End of analysis window\\
+gridEmissionFactorKgPerKwh & number & Yes & Electricity carbon intensity (kgCO\textsubscript{2}e/kWh) applied to truck energy consumption\\
+baselineEmissionFactorKgPerKm & number & Yes & Reference emission rate (kgCO\textsubscript{2}e/km) of an equivalent ICE truck, used for the reduction calc\\
+routeId   & string & No & Scope to one route\\
+truckId   & string & No & Scope to one truck\\
+groupBy   & string & No & \texttt{route} \textbar\ \texttt{truck} \textbar\ \texttt{dayType} (default \texttt{route})\\
+dayType   & string & No & \texttt{workday} \textbar\ \texttt{weekend} \textbar\ \texttt{all}\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Response 200:}
+\begin{lstlisting}[language=json, caption=Carbon emissions and reduction response]
+{
+  "success": true,
+  "data": {
+    "window": { "from": "2026-06-01T00:00:00Z", "to": "2026-07-01T00:00:00Z" },
+    "groupBy": "route",
+    "gridEmissionFactorKgPerKwh":     0.4999,
+    "baselineEmissionFactorKgPerKm":  0.85,
+    "series": [
+      {
+        "groupKey":                "route-bkk-R12",
+        "groupLabel":              "Bangkok South Loop",
+        "tripsIncluded":           88,
+        "distanceKm":              4108.4,
+        "energyConsumedKwh":       5546.3,
+        "evEmissionsKgCO2e":       2772.9,
+        "baselineEmissionsKgCO2e": 3492.1,
+        "emissionReductionKgCO2e": 719.2
+      }
+    ],
+    "totals": {
+      "distanceKm":              4108.4,
+      "energyConsumedKwh":       5546.3,
+      "evEmissionsKgCO2e":       2772.9,
+      "baselineEmissionsKgCO2e": 3492.1,
+      "emissionReductionKgCO2e": 719.2
+    }
+  }
+}
+\end{lstlisting}
+
+\noindent\textbf{Calculation:}
+\begin{itemize}[leftmargin=*]
+    \item \texttt{evEmissionsKgCO2e} = $\sum$ \texttt{energyConsumedKwh} (actual, per
+          completed trip) $\times$ \texttt{gridEmissionFactorKgPerKwh}; if a trip's
+          actual \texttt{energyConsumedKwh} is null, it falls back to
+          \texttt{distanceTraveledKm} $\times$ truck \texttt{energyConsumptionKwhPerKm}.
+    \item \texttt{baselineEmissionsKgCO2e} = \texttt{distanceKm} $\times$
+          \texttt{baselineEmissionFactorKgPerKm}.
+    \item \texttt{emissionReductionKgCO2e} = \texttt{baselineEmissionsKgCO2e} $-$
+          \texttt{evEmissionsKgCO2e}.
+\end{itemize}
+
+\noindent Only trips completed by Electric/Hybrid trucks (\texttt{powertrain} $\neq$
+\texttt{Diesel}) are included in \texttt{evEmissionsKgCO2e}; \texttt{distanceKm} in the
+response includes all trips in scope regardless of powertrain, so the baseline figure
+represents the counterfactual of running the same distance with ICE trucks.
+
+\newpage
+
+% ==============================================================================
 \section{Station Endpoints}
 % ==============================================================================
 
@@ -833,6 +934,13 @@ excluded from this handover document.
           monitoring that is owned and configured internally. The Cargo system
           only needs to display and allow acknowledgement of these alerts via the
           documented endpoints --- it does not need to compute or validate them.
+    \item \textbf{Carbon accounting is split by data ownership.} The Cargo system
+          computes vehicle-use emissions and emission reduction
+          (Section~\ref{sec:carbon-emissions}) because it owns the underlying
+          telemetry (distance, truck energy consumption) --- but it does not own the
+          emission-factor reference values, which the caller must supply. Charging-session
+          emissions and building/facility emissions are calculated entirely inside the
+          internal EMS and are not exposed via any Cargo endpoint.
     \item \textbf{Demand-response and energy coordination.} SIAM EV runs internal
           workflows that may temporarily prioritize certain stations (e.g.\ during
           a facility power event). These do not require any Cargo API changes or
@@ -876,7 +984,8 @@ excluded from this handover document.
 \multicolumn{3}{l}{\textit{Analytics}}\\[2pt]
 /cargo/analytics/utilization             & GET & Load \% and trip frequency over time\\
 /cargo/analytics/planning                & GET & Fleet sizing and frequency recommendations\\
-/cargo/analytics/load-history            & GET & Load trend with cargo photo gallery\\[4pt]
+/cargo/analytics/load-history            & GET & Load trend with cargo photo gallery\\
+/cargo/analytics/carbon-emissions        & GET & Vehicle-use carbon emissions and ICE-baseline reduction\\[4pt]
 
 \multicolumn{3}{l}{\textit{Stations (static reference data)}}\\[2pt]
 /cargo/stations                          & GET & List stations (name, position, type)\\
