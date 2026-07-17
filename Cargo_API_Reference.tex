@@ -1,0 +1,889 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+
+% --- Colour palette ------------------------------------------------------------
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+\definecolor{evblue}{RGB}{30,100,200}
+\definecolor{cargoamber}{RGB}{200,120,0}
+\definecolor{rowgray}{gray}{0.92}
+
+% --- Listing style -------------------------------------------------------------
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2,
+}
+\lstdefinelanguage{json}{
+    morestring=[b]",
+    morecomment=[l]{//},
+    sensitive=false,
+}
+\lstset{style=mystyle}
+
+% --- HTTP method macros --------------------------------------------------------
+\newcommand{\GET}{\colorbox{evblue!20}{\texttt{\textbf{\color{evblue}GET}}}}
+\newcommand{\POST}{\colorbox{cargoamber!30}{\texttt{\textbf{\color{cargoamber}POST}}}}
+\newcommand{\PUT}{\colorbox{cargoamber!20}{\texttt{\textbf{\color{cargoamber}PUT}}}}
+
+% --- Page header ---------------------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{SIAM EV Platform --- Cargo API (External)}
+\lhead{\leftmark}
+\rfoot{Page \thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=evblue,
+    urlcolor=evblue,
+    pdftitle={SIAM EV Platform - Cargo Space Monitoring API Reference (External)},
+    pdfauthor={Ruslee Sutthaweekul}
+}
+
+% --- Document ------------------------------------------------------------------
+\title{%
+    \textbf{SIAM EV Platform}\\[6pt]
+    \large Cargo Space Monitoring API Reference\\
+    \normalsize External Integration Edition
+}
+\author{Ruslee Sutthaweekul}
+\date{Version 1.0 \quad\textbullet\quad \today}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+% ==============================================================================
+\section{Introduction}
+% ==============================================================================
+
+This document describes the REST and WebSocket APIs for the \textbf{Cargo Space
+Monitoring} sub-system of the SIAM EV Unified Energy \& Logistics Management
+Platform. It is a scoped extract of the full platform API reference, prepared
+for handover to an external development partner responsible for the Cargo /
+Fleet management system. It does not include the OCPP Charging Monitoring or
+Energy Management System (EMS) APIs, which remain internal to SIAM EV; see
+Section~\ref{sec:integration-notes} for what a partner integrator needs to know
+about those boundaries.
+
+The Cargo Space Monitoring sub-system tracks two things:
+
+\begin{itemize}
+    \item \textbf{Trucks} --- mobile units tracked by GPS in real time. Each truck
+          carries a load sensor (0--100\%) and a camera that photographs the cargo
+          bay automatically when the door closes at departure.
+    \item \textbf{Stations} --- static named locations (reference points) where
+          trucks arrive and depart. A station has only an identifier, a name, and
+          a geographic position.
+\end{itemize}
+
+\noindent Cargo photos are stored in S3-compatible object storage and referenced
+by time-limited pre-signed URLs.
+
+\subsection{Base URL}
+
+All endpoints are served under the API Gateway. Replace \texttt{\{host\}} with the
+deployment address (e.g.\ \texttt{api.siam-ev.example.com}).
+
+\begin{lstlisting}[language=bash, caption=Base URL pattern]
+https://{host}/api/v1
+\end{lstlisting}
+
+\textbf{Cargo base path:} \texttt{/api/v1/cargo}
+
+\subsection{Authentication}
+
+Every request must carry a Bearer token obtained from the Auth Service.
+
+\begin{lstlisting}[language=bash, caption=Authorization header]
+Authorization: Bearer <access_token>
+\end{lstlisting}
+
+\begin{center}
+\begin{tabular}{>{\ttfamily}lll}
+\toprule
+\textbf{Header} & \textbf{Required} & \textbf{Description}\\
+\midrule
+Authorization & Yes & \texttt{Bearer <JWT>} issued by \texttt{/auth/token}\\
+Content-Type  & Yes (POST/PUT) & \texttt{application/json}\\
+X-Request-ID  & No  & Idempotency key; echoed in response headers\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Common Error Schema}
+
+\begin{lstlisting}[language=json, caption=Error response envelope]
+{
+  "success": false,
+  "error": {
+    "code": "TRUCK_NOT_FOUND",
+    "message": "No truck with id 'truck-bkk-099' exists.",
+    "timestamp": "2026-07-02T10:15:30Z"
+  }
+}
+\end{lstlisting}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{HTTP Status} & \textbf{Meaning} & \textbf{Common cause}\\
+\midrule
+200 & OK & Successful read\\
+201 & Created & Resource created\\
+400 & Bad Request & Missing or invalid fields\\
+401 & Unauthorized & Missing / expired token\\
+403 & Forbidden & Insufficient role\\
+404 & Not Found & Resource does not exist\\
+409 & Conflict & Duplicate resource\\
+500 & Internal Error & Upstream / database failure\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\newpage
+
+% ==============================================================================
+\section{Data Models}
+% ==============================================================================
+
+\subsection{Truck Object}
+
+\begin{lstlisting}[language=json, caption=Truck object schema]
+{
+  "id":            "truck-bkk-007",
+  "plateNumber":   "GKh-1234",
+  "name":          "Truck 07",
+  "type":          "StraightTruck",  // StraightTruck | Trailer | Refrigerated | Van
+  "capacityCbm":   40,
+  "status":        "InTransit",      // Idle | InTransit | Loading | Unloading | Offline
+  "currentLoadPct": 72,              // 0-100; from load sensor in cargo bay
+  "position": {
+    "lat":       13.8562,
+    "lng":       100.6211,
+    "headingDeg": 245,
+    "speedKph":   68,
+    "timestamp": "2026-07-02T10:04:55Z"
+  },
+  "currentTripId": "trip-20260702-0041",
+  "driverId":      "usr-drv-019",
+  "lastSeenAt":    "2026-07-02T10:04:55Z"
+}
+\end{lstlisting}
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{status} & \textbf{Meaning}\\
+\midrule
+\texttt{Idle}       & At a station, engine off, no active trip\\
+\texttt{InTransit}  & Moving between stations\\
+\texttt{Loading}    & Door open, cargo being loaded\\
+\texttt{Unloading}  & Door open, cargo being unloaded\\
+\texttt{Offline}    & GPS/telemetry signal lost \textgreater{} 5 min\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Route Object}
+
+A \emph{route} defines a named sequence of stations a truck is assigned to serve.
+
+\begin{lstlisting}[language=json, caption=Route object schema]
+{
+  "id":          "route-bkk-R12",
+  "name":        "Bangkok South Loop",
+  "description": "Lad Krabang Hub -> Samut Prakan -> Bang Na -> Return",
+  "waypoints": [
+    { "order": 1, "stationId": "site-bkk-001",
+      "name": "Lad Krabang Hub",    "lat": 13.7284, "lng": 100.7498,
+      "dwellMinutes": 30 },
+    { "order": 2, "stationId": "site-bkk-012",
+      "name": "Samut Prakan Depot", "lat": 13.5990, "lng": 100.5964,
+      "dwellMinutes": 20 },
+    { "order": 3, "stationId": "site-bkk-005",
+      "name": "Bang Na Post Office","lat": 13.6607, "lng": 100.6050,
+      "dwellMinutes": 15 }
+  ],
+  "estimatedDurationMin": 130,
+  "distanceKm":           68.4,
+  "activeOnWorkdays":     true,
+  "activeOnWeekends":     false
+}
+\end{lstlisting}
+
+\subsection{Trip Object}
+
+A \emph{trip} is one end-to-end run of a route by a specific truck.
+A cargo photo is captured automatically on each \texttt{DoorClose} event
+(i.e.\ when the door shuts after loading at a station).
+
+\begin{lstlisting}[language=json, caption=Trip object schema]
+{
+  "id":           "trip-20260702-0041",
+  "truckId":      "truck-bkk-007",
+  "routeId":      "route-bkk-R12",
+  "driverId":     "usr-drv-019",
+  "status":       "InProgress",  // Scheduled | InProgress | Completed | Cancelled
+  "isWorkday":    true,
+  "scheduledDepartureAt": "2026-07-02T08:00:00Z",
+  "actualDepartureAt":    "2026-07-02T08:07:00Z",
+  "actualArrivalAt":      null,  // null while InProgress
+  "events": [
+    {
+      "eventId":    "evt-tr-0041-001",
+      "type":       "DoorClose",   // Arrival | Departure | DoorOpen | DoorClose
+      "stationId":  "site-bkk-001",
+      "stationName":"Lad Krabang Hub",
+      "timestamp":  "2026-07-02T08:05:00Z",
+      "loadPct":    85,
+      "cargoPhoto": {
+        "photoId":     "photo-0041-001",
+        "url":         "https://storage.siam-ev.example.com/...",
+        "urlExpiresAt":"2026-07-02T11:05:00Z",  // pre-signed URL TTL
+        "takenAt":     "2026-07-02T08:05:03Z",
+        "fileSizeKb":  342
+      }
+    },
+    {
+      "eventId":   "evt-tr-0041-002",
+      "type":      "Arrival",
+      "stationId": "site-bkk-012",
+      "stationName":"Samut Prakan Depot",
+      "timestamp": "2026-07-02T09:44:00Z",
+      "loadPct":   61,
+      "cargoPhoto": null
+    }
+  ]
+}
+\end{lstlisting}
+
+\subsection{Station Object}
+
+A \emph{station} is a named geographic reference point where trucks pick up and
+drop off cargo. It is static master data: the Cargo sub-system stores only the
+fields a dispatcher or map view needs to identify and locate the site.
+
+\begin{lstlisting}[language=json, caption=Station object schema]
+{
+  "id":      "site-bkk-001",
+  "name":    "Lad Krabang Hub",
+  "address": "999 Moo 1, Lad Krabang, Bangkok 10520",
+  "lat":     13.7284,
+  "lng":     100.7498,
+  "type":    "Hub"                    // Hub | Depot | PostOffice | CustomerSite
+}
+\end{lstlisting}
+
+\newpage
+
+% ==============================================================================
+\section{Truck Endpoints}
+% ==============================================================================
+
+\subsection{\GET\ \ \texttt{/cargo/trucks} --- Live truck map data}
+
+Returns all trucks with current GPS position and load percentage for the
+real-time map dashboard.
+
+\textbf{Query parameters:}
+
+\begin{center}
+\begin{tabular}{>{\ttfamily}llll}
+\toprule
+\textbf{Param} & \textbf{Type} & \textbf{Default} & \textbf{Description}\\
+\midrule
+status    & string  & ---   & Filter by status enum\\
+routeId   & string  & ---   & Filter trucks assigned to a route\\
+limit     & integer & 200   & Max records\\
+offset    & integer & 0     & Pagination offset\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Response 200:}
+\begin{lstlisting}[language=json, caption=Live truck list response]
+{
+  "success": true,
+  "data": [ /* array of Truck objects */ ],
+  "meta": { "total": 18, "inTransit": 11, "idle": 5, "offline": 2 }
+}
+\end{lstlisting}
+
+\subsection{\GET\ \ \texttt{/cargo/trucks/\{id\}} --- Get single truck}
+
+Returns the full Truck object including the current trip reference.
+
+\textbf{Response 200:}
+\begin{lstlisting}[language=json]
+{ "success": true, "data": { /* Truck object */ } }
+\end{lstlisting}
+
+\subsection{\GET\ \ \texttt{/cargo/trucks/\{id\}/trips} --- Truck trip history}
+
+Returns completed and in-progress trips for a specific truck, with optional
+date and day-type filters.
+
+\textbf{Query parameters:}
+
+\begin{center}
+\begin{tabular}{>{\ttfamily}llll}
+\toprule
+\textbf{Param} & \textbf{Type} & \textbf{Required} & \textbf{Description}\\
+\midrule
+from    & ISO-8601 & No  & Filter trips departing after this time\\
+to      & ISO-8601 & No  & Filter trips departing before this time\\
+dayType & string   & No  & \texttt{workday} \textbar\ \texttt{weekend} \textbar\ \texttt{all} (default \texttt{all})\\
+routeId & string   & No  & Limit to a specific route\\
+status  & string   & No  & \texttt{Completed} \textbar\ \texttt{InProgress} \textbar\ \texttt{Cancelled}\\
+limit   & integer  & No  & Max records (default 50)\\
+offset  & integer  & No  & Pagination offset\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Response 200:}
+\begin{lstlisting}[language=json, caption=Truck trip history response]
+{
+  "success": true,
+  "data": [
+    {
+      "id":                "trip-20260702-0041",
+      "routeId":           "route-bkk-R12",
+      "routeName":         "Bangkok South Loop",
+      "status":            "InProgress",
+      "isWorkday":         true,
+      "actualDepartureAt": "2026-07-02T08:07:00Z",
+      "actualArrivalAt":   null,
+      "loadAtDeparturePct": 85,
+      "loadAtArrivalPct":   null,
+      "eventCount":        2
+    }
+  ],
+  "meta": { "total": 143, "limit": 50, "offset": 0 }
+}
+\end{lstlisting}
+
+\newpage
+
+% ==============================================================================
+\section{Route Endpoints}
+% ==============================================================================
+
+\subsection{\GET\ \ \texttt{/cargo/routes} --- List routes}
+
+\textbf{Query parameters:} \texttt{activeOnWorkdays} (bool), \texttt{activeOnWeekends} (bool).
+
+\textbf{Response 200:}
+\begin{lstlisting}[language=json]
+{ "success": true, "data": [ /* array of Route objects */ ] }
+\end{lstlisting}
+
+\subsection{\GET\ \ \texttt{/cargo/routes/\{id\}} --- Route details}
+
+Returns the full Route object including all waypoints with station coordinates.
+
+\textbf{Response 200:}
+\begin{lstlisting}[language=json]
+{ "success": true, "data": { /* Route object */ } }
+\end{lstlisting}
+
+\subsection{\GET\ \ \texttt{/cargo/routes/\{id\}/trips} --- Trips for a route}
+
+Returns all trips that ran (or are running) on a given route, across any truck.
+Supports the same \texttt{from}/\texttt{to}/\texttt{dayType} filters as the
+truck-level history endpoint.
+
+\textbf{Response 200:}
+\begin{lstlisting}[language=json, caption=Route trip history response]
+{
+  "success": true,
+  "data": [
+    {
+      "id":                "trip-20260702-0041",
+      "truckId":           "truck-bkk-007",
+      "truckPlate":        "gk-1234",
+      "driverId":          "usr-drv-019",
+      "status":            "InProgress",
+      "isWorkday":         true,
+      "actualDepartureAt": "2026-07-02T08:07:00Z",
+      "loadAtDeparturePct": 85
+    }
+  ],
+  "meta": { "total": 92, "limit": 50, "offset": 0 }
+}
+\end{lstlisting}
+
+\newpage
+
+% ==============================================================================
+\section{Trip Endpoints}
+% ==============================================================================
+
+\subsection{\GET\ \ \texttt{/cargo/trips} --- Search trips}
+
+Global trip search across all trucks and routes with rich filtering --- the
+primary endpoint for the history view and the planning dashboard.
+
+\textbf{Query parameters:}
+
+\begin{center}
+\begin{tabular}{>{\ttfamily}llll}
+\toprule
+\textbf{Param} & \textbf{Type} & \textbf{Required} & \textbf{Description}\\
+\midrule
+from         & ISO-8601 & No  & Departure time lower bound\\
+to           & ISO-8601 & No  & Departure time upper bound\\
+dayType      & string   & No  & \texttt{workday} \textbar\ \texttt{weekend} \textbar\ \texttt{all}\\
+truckId      & string   & No  & Scope to one truck\\
+routeId      & string   & No  & Scope to one route\\
+stationId    & string   & No  & Trips that visited this station\\
+status       & string   & No  & Trip status filter\\
+minLoadPct   & integer  & No  & Return trips where departure load $\geq$ value\\
+maxLoadPct   & integer  & No  & Return trips where departure load $\leq$ value\\
+limit        & integer  & No  & Max records (default 50, max 500)\\
+offset       & integer  & No  & Pagination offset\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Response 200:}
+\begin{lstlisting}[language=json, caption=Trip search response (summary list)]
+{
+  "success": true,
+  "data": [ /* array of Trip summary objects (no events array) */ ],
+  "meta": {
+    "total":          320,
+    "limit":          50,
+    "offset":         0,
+    "avgLoadPct":     71.4,
+    "workdayCount":   234,
+    "weekendCount":   86
+  }
+}
+\end{lstlisting}
+
+\subsection{\GET\ \ \texttt{/cargo/trips/\{id\}} --- Get full trip detail}
+
+Returns the complete Trip object including every event, load reading, and
+cargo photo URL for that trip.
+
+\textbf{Response 200:}
+\begin{lstlisting}[language=json]
+{ "success": true, "data": { /* full Trip object with events array */ } }
+\end{lstlisting}
+
+\noindent\textbf{Note on cargo photo URLs:} Pre-signed URLs embedded in the response
+expire after 3 hours. Clients should not persist the URL; re-fetch the trip to
+get a fresh URL if needed.
+
+\newpage
+
+% ==============================================================================
+\section{Planning Analytics Endpoints}
+% ==============================================================================
+
+These endpoints aggregate historical trip data into the metrics needed to plan
+future route assignments (truck count, trip frequency, load efficiency).
+
+\subsection{\GET\ \ \texttt{/cargo/analytics/utilization} --- Load utilization over time}
+
+Returns average load percentage and trip frequency bucketed by time interval
+and optionally split by route, truck, or day type.
+
+\textbf{Query parameters:}
+
+\begin{center}
+\begin{tabular}{>{\ttfamily}llll}
+\toprule
+\textbf{Param} & \textbf{Type} & \textbf{Required} & \textbf{Description}\\
+\midrule
+from      & ISO-8601 & Yes & Start of analysis window\\
+to        & ISO-8601 & Yes & End of analysis window\\
+groupBy   & string   & No  & \texttt{route} \textbar\ \texttt{truck} \textbar\ \texttt{dayType} \textbar\ \texttt{hour}\\
+routeId   & string   & No  & Scope to one route\\
+dayType   & string   & No  & \texttt{workday} \textbar\ \texttt{weekend} \textbar\ \texttt{all}\\
+interval  & string   & No  & Bucket size: \texttt{1d} \textbar\ \texttt{1w} \textbar\ \texttt{1mo} (default \texttt{1d})\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Response 200:}
+\begin{lstlisting}[language=json, caption=Utilization analytics response]
+{
+  "success": true,
+  "data": {
+    "window": { "from": "2026-06-01T00:00:00Z", "to": "2026-07-01T00:00:00Z" },
+    "interval": "1d",
+    "groupBy":  "route",
+    "series": [
+      {
+        "groupKey":    "route-bkk-R12",
+        "groupLabel":  "Bangkok South Loop",
+        "buckets": [
+          {
+            "date":          "2026-06-01",
+            "tripsCompleted": 3,
+            "avgLoadPct":    74.2,
+            "peakLoadPct":   95,
+            "minLoadPct":    42,
+            "totalKm":       205.2
+          }
+        ]
+      }
+    ]
+  }
+}
+\end{lstlisting}
+
+\subsection{\GET\ \ \texttt{/cargo/analytics/planning} --- Fleet planning recommendations}
+
+Analyses historical patterns and returns data-driven recommendations for
+route scheduling, truck count, and travel frequency. This is the primary
+output for the planning workflow.
+
+\textbf{Query parameters:}
+
+\begin{center}
+\begin{tabular}{>{\ttfamily}llll}
+\toprule
+\textbf{Param} & \textbf{Type} & \textbf{Required} & \textbf{Description}\\
+\midrule
+from       & ISO-8601 & Yes & Historical window start\\
+to         & ISO-8601 & Yes & Historical window end\\
+routeId    & string   & No  & Limit analysis to one route\\
+targetUtil & number   & No  & Desired avg load \% (default 80)\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Response 200:}
+\begin{lstlisting}[language=json, caption=Planning recommendations response]
+{
+  "success": true,
+  "data": {
+    "analysisWindow": { "from": "2026-06-01T00:00:00Z", "to": "2026-07-01T00:00:00Z" },
+    "targetUtilPct":  80,
+    "routes": [
+      {
+        "routeId":    "route-bkk-R12",
+        "routeName":  "Bangkok South Loop",
+        "workdays": {
+          "avgTripsPerDay":   3.1,
+          "avgLoadPct":       74.2,
+          "peakDemandHour":   "08:00",
+          "currentTrucksUsed": 2,
+          "recommendedTrucks": 2,
+          "recommendedFreqPerDay": 3,
+          "utilizationGapPct": 5.8
+        },
+        "weekends": {
+          "avgTripsPerDay":   1.0,
+          "avgLoadPct":       41.3,
+          "peakDemandHour":   "10:00",
+          "currentTrucksUsed": 2,
+          "recommendedTrucks": 1,
+          "recommendedFreqPerDay": 1,
+          "utilizationGapPct": 38.7
+        },
+        "insights": [
+          "Weekend demand is 55% lower than workday demand.",
+          "Reallocating 1 truck from weekends could serve 2 additional workday trips.",
+          "Peak load occurs between 07:00 and 09:00 on workdays."
+        ]
+      }
+    ]
+  }
+}
+\end{lstlisting}
+
+\subsection{\GET\ \ \texttt{/cargo/analytics/load-history} --- Load trend with photos}
+
+Returns load readings paired with cargo photo thumbnails for a route or truck
+over a date range. Designed for the history gallery view in the dashboard.
+
+\textbf{Query parameters:}
+
+\begin{center}
+\begin{tabular}{>{\ttfamily}llll}
+\toprule
+\textbf{Param} & \textbf{Type} & \textbf{Required} & \textbf{Description}\\
+\midrule
+from     & ISO-8601 & Yes & Start date\\
+to       & ISO-8601 & Yes & End date\\
+routeId  & string   & No  & Filter by route\\
+truckId  & string   & No  & Filter by truck\\
+dayType  & string   & No  & \texttt{workday} \textbar\ \texttt{weekend} \textbar\ \texttt{all}\\
+limit    & integer  & No  & Max events returned (default 100)\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Response 200:}
+\begin{lstlisting}[language=json, caption=Load history with photos response]
+{
+  "success": true,
+  "data": [
+    {
+      "tripId":       "trip-20260702-0041",
+      "truckId":      "truck-bkk-007",
+      "truckPlate":   "gk-1234",
+      "routeName":    "Bangkok South Loop",
+      "stationName":  "Lad Krabang Hub",
+      "departureAt":  "2026-07-02T08:07:00Z",
+      "isWorkday":    true,
+      "loadPct":      85,
+      "photo": {
+        "photoId":      "photo-0041-001",
+        "url":          "https://storage.siam-ev.example.com/...",
+        "thumbnailUrl": "https://storage.siam-ev.example.com/.../thumb",
+        "urlExpiresAt": "2026-07-02T11:07:00Z",
+        "takenAt":      "2026-07-02T08:05:03Z"
+      }
+    }
+  ],
+  "meta": { "total": 187, "limit": 100, "offset": 0 }
+}
+\end{lstlisting}
+
+\newpage
+
+% ==============================================================================
+\section{Station Endpoints}
+% ==============================================================================
+
+Stations are static master data. These endpoints populate map markers, filter
+dropdowns, and the route builder. They carry no real-time energy or
+environmental data.
+
+\subsection{\GET\ \ \texttt{/cargo/stations} --- List stations}
+
+\textbf{Query parameters:} \texttt{type}, \texttt{limit}, \texttt{offset}.
+
+\textbf{Response 200:}
+\begin{lstlisting}[language=json]
+{
+  "success": true,
+  "data": [ /* array of Station objects */ ],
+  "meta": { "total": 18 }
+}
+\end{lstlisting}
+
+\subsection{\GET\ \ \texttt{/cargo/stations/\{id\}} --- Get station}
+
+Returns the Station object (id, name, address, lat, lng, type).
+
+\section{Alert Endpoints}
+
+\subsection{\GET\ \ \texttt{/cargo/alerts} --- List active alerts}
+
+\textbf{Query parameters:} \texttt{stationId}, \texttt{truckId}, \texttt{severity}
+(\texttt{Critical} \textbar\ \texttt{Warning}), \texttt{limit}, \texttt{offset}.
+
+\textbf{Response 200:}
+\begin{lstlisting}[language=json, caption=Active alerts response]
+{
+  "success": true,
+  "data": [
+    {
+      "alertId":       "alrt-20260702-007",
+      "sourceType":    "Zone",          // Zone | Truck
+      "sourceId":      "zone-stn-001-cold-01",
+      "type":          "TemperatureExceeded",
+      "severity":      "Critical",
+      "value":         9.1,
+      "threshold":     8.0,
+      "unit":          "degC",
+      "triggeredAt":   "2026-07-02T10:22:00Z",
+      "acknowledgedAt": null
+    }
+  ]
+}
+\end{lstlisting}
+
+\noindent\textbf{Note on \texttt{sourceType}:} \texttt{Truck} alerts originate from
+sensors on the vehicle (e.g.\ a refrigerated compartment). \texttt{Zone} alerts
+originate from station-level environmental monitoring that is configured and
+owned by an internal SIAM EV system outside this document's scope --- treat
+\texttt{sourceId} as an opaque string for display/filtering purposes.
+
+\subsection{\POST\ \ \texttt{/cargo/alerts/\{alertId\}/acknowledge} --- Acknowledge alert}
+
+\textbf{Request body:}
+\begin{lstlisting}[language=json]
+{ "acknowledgedBy": "usr-0007", "note": "Compressor maintenance dispatched." }
+\end{lstlisting}
+
+\newpage
+
+% ==============================================================================
+\section{WebSocket --- Live Cargo and Fleet Feed}
+% ==============================================================================
+
+A single WebSocket connection delivers both fleet (truck) and station (zone)
+events. Use the \texttt{scope} parameter to subscribe only to the events your
+dashboard panel needs.
+
+\begin{lstlisting}[language=bash]
+wss://{host}/api/v1/cargo/ws?scope=trucks,zones&token=<access_token>
+\end{lstlisting}
+
+\textbf{Truck position and load update:}
+\begin{lstlisting}[language=json, caption=TruckPositionUpdate event]
+{
+  "event":   "TruckPositionUpdate",
+  "truckId": "truck-bkk-007",
+  "data": {
+    "lat":        13.8562,
+    "lng":        100.6211,
+    "headingDeg": 245,
+    "speedKph":   68,
+    "loadPct":    72,
+    "timestamp":  "2026-07-02T10:04:55Z"
+  }
+}
+\end{lstlisting}
+
+\textbf{Cargo photo ready event} (emitted seconds after door closes at a station):
+\begin{lstlisting}[language=json, caption=CargoPhotoReady event]
+{
+  "event":   "CargoPhotoReady",
+  "tripId":  "trip-20260702-0041",
+  "truckId": "truck-bkk-007",
+  "data": {
+    "eventId":      "evt-tr-0041-001",
+    "stationId":    "site-bkk-001",
+    "stationName":  "Lad Krabang Hub",
+    "loadPct":      85,
+    "photoId":      "photo-0041-001",
+    "thumbnailUrl": "https://storage.siam-ev.example.com/.../thumb",
+    "takenAt":      "2026-07-02T08:05:03Z"
+  }
+}
+\end{lstlisting}
+
+\textbf{All WebSocket event types:}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{event} & \textbf{scope} & \textbf{Trigger}\\
+\midrule
+\texttt{TruckPositionUpdate} & trucks & GPS reading every 5 s while InTransit\\
+\texttt{TruckStatusChange}   & trucks & Status transitions (e.g.\ InTransit $\to$ Idle)\\
+\texttt{TripStarted}         & trucks & New trip begins (truck departs station)\\
+\texttt{TripCompleted}       & trucks & Trip ends at final waypoint\\
+\texttt{CargoPhotoReady}     & trucks & Photo captured on DoorClose; thumbnail available\\
+\texttt{EnvironmentUpdate}   & zones  & Zone sensor reading every 30 s\\
+\texttt{AlertTriggered}      & zones  & Threshold breach on zone or truck sensor\\
+\texttt{AlertResolved}       & zones  & Reading returns within threshold\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\newpage
+
+% ==============================================================================
+\section{Integration Notes}
+\label{sec:integration-notes}
+% ==============================================================================
+
+This section summarizes, at a high level, how the Cargo system fits into the
+wider SIAM EV platform. Details of the other sub-systems are intentionally
+excluded from this handover document.
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Station identity is shared internally.} A \texttt{stationId}
+          (e.g.\ \texttt{site-bkk-001}) may correspond to the same physical site
+          in other internal SIAM EV systems. This cross-reference is coordinated
+          entirely on the SIAM EV side; the Cargo API contract in this document
+          does not change based on it, and no additional integration work is
+          required by the Cargo system to support it.
+    \item \textbf{Zone-sourced alerts.} As noted in Section~6, some entries returned
+          by \texttt{GET /cargo/alerts} originate from station environmental
+          monitoring that is owned and configured internally. The Cargo system
+          only needs to display and allow acknowledgement of these alerts via the
+          documented endpoints --- it does not need to compute or validate them.
+    \item \textbf{Demand-response and energy coordination.} SIAM EV runs internal
+          workflows that may temporarily prioritize certain stations (e.g.\ during
+          a facility power event). These do not require any Cargo API changes or
+          calls to systems outside this document.
+    \item \textbf{Out of scope for this handover.} OCPP charging telemetry, the
+          Energy Management System (EMS) API, and the outbound webhook registry
+          are separate SIAM EV--internal systems and are not included here. If a
+          future feature requires the Cargo system to call one of those APIs
+          directly, SIAM EV will provide a supplementary interface specification
+          at that time.
+\end{itemize}
+
+\newpage
+
+% ==============================================================================
+\section{API Quick Reference}
+% ==============================================================================
+
+\begin{longtable}{>{\ttfamily\footnotesize}p{0.45\textwidth} p{0.08\textwidth} p{0.38\textwidth}}
+\toprule
+\textbf{Endpoint} & \textbf{Method} & \textbf{Description}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Endpoint} & \textbf{Method} & \textbf{Description}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+\multicolumn{3}{l}{\textit{Fleet}}\\[2pt]
+/cargo/trucks                            & GET & Live truck positions and loads (map)\\
+/cargo/trucks/\{id\}                     & GET & Single truck detail\\
+/cargo/trucks/\{id\}/trips               & GET & Trip history for a truck\\
+/cargo/routes                            & GET & List routes\\
+/cargo/routes/\{id\}                     & GET & Route detail with waypoints\\
+/cargo/routes/\{id\}/trips               & GET & All trips on a route\\
+/cargo/trips                             & GET & Global trip search with date/dayType filter\\
+/cargo/trips/\{id\}                      & GET & Full trip detail with events and photos\\[4pt]
+
+\multicolumn{3}{l}{\textit{Analytics}}\\[2pt]
+/cargo/analytics/utilization             & GET & Load \% and trip frequency over time\\
+/cargo/analytics/planning                & GET & Fleet sizing and frequency recommendations\\
+/cargo/analytics/load-history            & GET & Load trend with cargo photo gallery\\[4pt]
+
+\multicolumn{3}{l}{\textit{Stations (static reference data)}}\\[2pt]
+/cargo/stations                          & GET & List stations (name, position, type)\\
+/cargo/stations/\{id\}                   & GET & Single station\\
+/cargo/alerts                            & GET & Active alerts (trucks and stations)\\
+/cargo/alerts/\{alertId\}/acknowledge    & POST & Acknowledge an alert\\
+/cargo/ws                                & WS  & Live truck and station event feed\\
+\end{longtable}
+
+\end{document}
