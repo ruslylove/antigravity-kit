@@ -10,6 +10,8 @@
 \usepackage{enumitem}
 \usepackage{fancyhdr}
 \usepackage{titlesec}
+\usepackage{tikz}
+\usetikzlibrary{shapes.multipart, arrows.meta, positioning}
 
 % --- Colour palette ------------------------------------------------------------
 \definecolor{codegreen}{rgb}{0,0.6,0}
@@ -175,6 +177,57 @@ X-Request-ID  & No  & Idempotency key; echoed in response headers\\
 % ==============================================================================
 \section{Data Models}
 % ==============================================================================
+
+\subsection{Object Model Overview}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+    node distance=1.3cm and 2.0cm,
+    class/.style={rectangle split, rectangle split parts=2, draw, thick,
+                  rounded corners, rectangle split part align={center,left},
+                  text width=3.5cm, font=\footnotesize},
+    ext/.style={class, dashed, fill=gray!8},
+    rel/.style={thick, -{Stealth[length=2mm]}},
+    drel/.style={rel, dashed},
+    lbl/.style={font=\scriptsize, fill=white, inner sep=1pt}
+]
+
+\node[class] (station) {\textbf{Station}
+  \nodepart{second}\ttfamily id\\name\\lat, lng\\type};
+\node[class, right=of station] (route) {\textbf{Route}
+  \nodepart{second}\ttfamily id\\name\\waypoints[].stationId};
+\node[class, below=of station] (truck) {\textbf{Truck}
+  \nodepart{second}\ttfamily id\\plateNumber\\status\\currentTripId};
+\node[class, below=of route] (trip) {\textbf{Trip}
+  \nodepart{second}\ttfamily id\\truckId\\routeId\\status\\events[].stationId};
+\node[class, below=of truck] (alert) {\textbf{Alert}
+  \nodepart{second}\ttfamily alertId\\sourceType\\sourceId\\severity};
+\node[ext, below=of trip] (zone) {\textit{Zone (external)}
+  \nodepart{second}\scriptsize owned by EMS;\\opaque \texttt{sourceId}};
+
+\draw[rel] (route.west) -- (station.east)
+    node[lbl, above, pos=0.5] {waypoints 1..*};
+\draw[rel] (trip.north) -- (route.south)
+    node[lbl, right, pos=0.5] {routeId};
+\draw[rel] (trip.west) to[bend left=15]
+    node[lbl, above] {truckId} (truck.east);
+\draw[drel] (truck.east) to[bend right=15]
+    node[lbl, below] {currentTripId} (trip.west);
+\draw[rel] (alert.north) -- (truck.south)
+    node[lbl, right, pos=0.5] {sourceType=Truck};
+\draw[drel] (alert.east) -- (zone.west)
+    node[lbl, above, pos=0.5] {sourceType=Zone};
+
+\end{tikzpicture}
+\caption{Cargo object model --- solid arrows are foreign-key references within
+this API (\texttt{Trip.events[].stationId} also references Station, and
+\texttt{Trip.routeId}/\texttt{truckId} are the two IDs a Trip is created
+with). The dashed box marks data whose owning system is out of scope for this
+document (see Section~\ref{sec:integration-notes}).}
+\end{figure}
+
+\newpage
 
 \subsection{Truck Object}
 
