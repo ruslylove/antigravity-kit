@@ -106,4 +106,8 @@ export interface Truck {
     seqNo: number;
     clkSource: string;
   };
+  cargo?: {
+    frontDistM: number;        // front TOF sensor, 0-4m (lower = more full)
+    rearDistM: number;         // rear TOF sensor, 0-4m
+  };
 }

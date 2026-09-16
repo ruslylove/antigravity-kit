@@ -2,7 +2,7 @@
 
 # --- Configuration ---
 REMOTE_USER="olx"
-REMOTE_HOST="91.210.146.166"
+REMOTE_HOST="140.150.152.166"
 REMOTE_PASS="${REMOTE_PASS:-}"
 REMOTE_PATH="/home/olx/siam-ev-dashboard"
 BUNDLE_NAME="dashboard_bundle_v16.tar.gz"

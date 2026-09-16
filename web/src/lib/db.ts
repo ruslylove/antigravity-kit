@@ -1,7 +1,7 @@
 import { Pool } from "pg";
 import { getBaseStations } from "./stations";
 
-const connectionString = process.env.DATABASE_URL || "postgresql://postgres:Qq1150++@91.210.146.166/postgres?sslmode=disable";
+const connectionString = process.env.DATABASE_URL || "postgresql://postgres:Qq1150++@140.150.152.166/postgres?sslmode=disable";
 
 export const pool = new Pool({
   connectionString,

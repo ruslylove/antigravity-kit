@@ -427,6 +427,16 @@ function SelectedTruckDetail({ truck, statusColor }: { truck: Truck; statusColor
               <span className="text-[8px] text-white/40 font-black uppercase tracking-widest block mb-0.5">Sync Source</span>
               <span className="text-[12px] font-black text-white uppercase">{truck.device?.clkSource || "GPS"}</span>
             </div>
+
+            <div className="border-r border-white/5 pr-2 pt-2 border-t">
+              <span className="text-[8px] text-white/40 font-black uppercase tracking-widest block mb-0.5">Cargo TOF Front</span>
+              <span className="text-[12px] font-black text-white">{truck.cargo?.frontDistM ?? "-"} <span className="text-[8px] text-white/30">m</span></span>
+            </div>
+
+            <div className="pl-2 pt-2 border-t">
+              <span className="text-[8px] text-white/40 font-black uppercase tracking-widest block mb-0.5">Cargo TOF Rear</span>
+              <span className="text-[12px] font-black text-white">{truck.cargo?.rearDistM ?? "-"} <span className="text-[8px] text-white/30">m</span></span>
+            </div>
           </div>
 
           <div className="mt-3 pt-3 border-t border-white/5 flex justify-between items-center text-[8px] font-mono text-white/30">

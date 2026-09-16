@@ -2,7 +2,7 @@ const mqtt = require("mqtt");
 const fs = require("fs");
 const path = require("path");
 
-const REMOTE_IP = "91.210.146.166";
+const REMOTE_IP = "140.150.152.166";
 const MQTT_BROKER = `mqtt://${REMOTE_IP}:1883`;
 const SERVER_URL = `http://${REMOTE_IP}:3000`;
 const TRUCK_ID = "truck-001";
@@ -19,6 +19,8 @@ let lng = 100.5120;
 let seqNo = 1247;
 let batterySOC = 98;
 let telemetryLoopCount = 0;
+let cargoFrontDistM = 0.4;
+let cargoRearDistM = 2.8;
 
 console.log(`🔌 Connecting to MQTT Broker at ${MQTT_BROKER}...`);
 const client = mqtt.connect(MQTT_BROKER, {
@@ -67,8 +69,11 @@ function startTelemetryLoop() {
     const rpm = speed > 0 ? 1500 + Math.floor(Math.random() * 800) : 0;
     
     batterySOC -= 0.1;
-    if (batterySOC < 20) batterySOC = 98; 
-    
+    if (batterySOC < 20) batterySOC = 98;
+
+    cargoFrontDistM = Math.min(4, Math.max(0, cargoFrontDistM + (Math.random() - 0.5) * 0.1));
+    cargoRearDistM = Math.min(4, Math.max(0, cargoRearDistM + (Math.random() - 0.5) * 0.1));
+
     const telemetryPayload = {
       v: 1,
       ts: Math.floor(Date.now() / 1000),
@@ -98,6 +103,10 @@ function startTelemetryLoop() {
         seqNo: seqNo,
         bufferDepth: 0,
         clkSource: "GPS"
+      },
+      cargo: {
+        frontDistM: Math.round(cargoFrontDistM * 100) / 100,
+        rearDistM: Math.round(cargoRearDistM * 100) / 100
       }
     };
     

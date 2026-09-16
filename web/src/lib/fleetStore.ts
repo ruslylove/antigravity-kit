@@ -180,7 +180,8 @@ async function seedInitialTrucks() {
           parcelsAvailable: t.parcelsAvailable,
           containerImages: t.containerImages,
           obd: t.obd,
-          device: t.device
+          device: t.device,
+          cargo: t.cargo
         };
         await pool.query(`
           INSERT INTO trucks (id, name, driver_name, status, lat, lng, last_seen, data)
@@ -244,7 +245,8 @@ export const fleetStore = {
           parcelsAvailable: row.data.parcelsAvailable || 100,
           containerImages: row.data.containerImages || [],
           obd: row.data.obd,
-          device: row.data.device
+          device: row.data.device,
+          cargo: row.data.cargo
         });
       }
 
@@ -352,6 +354,13 @@ async function updateTruckTelemetry(truckId: string, telemetry: any) {
       };
     }
 
+    if (telemetry.cargo) {
+      truckData.cargo = {
+        frontDistM: telemetry.cargo.frontDistM,
+        rearDistM: telemetry.cargo.rearDistM
+      };
+    }
+
     // Save updated truck state
     await pool.query(`
       INSERT INTO trucks (id, name, driver_name, status, lat, lng, last_seen, data)
@@ -369,7 +378,7 @@ async function updateTruckTelemetry(truckId: string, telemetry: any) {
     await pool.query(`
       INSERT INTO telemetry_history (truck_id, lat, lng, speed, data)
       VALUES ($1, $2, $3, $4, $5)
-    `, [truckId, lat, lng, speed, { obd: truckData.obd, device: truckData.device }]);
+    `, [truckId, lat, lng, speed, { obd: truckData.obd, device: truckData.device, cargo: truckData.cargo }]);
 
     // Prune history data older than 90 days
     await pool.query(`

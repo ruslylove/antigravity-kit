@@ -1,0 +1,84 @@
+module.exports=[70406,(e,t,a)=>{t.exports=e.x("next/dist/compiled/@opentelemetry/api",()=>require("next/dist/compiled/@opentelemetry/api"))},93695,(e,t,a)=>{t.exports=e.x("next/dist/shared/lib/no-fallback-error.external.js",()=>require("next/dist/shared/lib/no-fallback-error.external.js"))},18622,(e,t,a)=>{t.exports=e.x("next/dist/compiled/next-server/app-page-turbo.runtime.prod.js",()=>require("next/dist/compiled/next-server/app-page-turbo.runtime.prod.js"))},56704,(e,t,a)=>{t.exports=e.x("next/dist/server/app-render/work-async-storage.external.js",()=>require("next/dist/server/app-render/work-async-storage.external.js"))},32319,(e,t,a)=>{t.exports=e.x("next/dist/server/app-render/work-unit-async-storage.external.js",()=>require("next/dist/server/app-render/work-unit-async-storage.external.js"))},24725,(e,t,a)=>{t.exports=e.x("next/dist/server/app-render/after-task-async-storage.external.js",()=>require("next/dist/server/app-render/after-task-async-storage.external.js"))},24361,(e,t,a)=>{t.exports=e.x("util",()=>require("util"))},65198,e=>e.a(async(t,a)=>{try{let t=await e.y("pg-efd4e0d5a399fadd");e.n(t),a()}catch(e){a(e)}},!0),24399,e=>{"use strict";function t(){return[{id:"station-bkk-001",name:"Siam Paragon Hub",lat:13.7462,lng:100.5347,status:"Available",powerLimit:"150kW",socketStatus:"Available",currentMeter:0,powerOutput:0},{id:"station-bkk-002",name:"Sukhumvit 21 Fast",lat:13.741,lng:100.56,status:"Charging",powerLimit:"75kW",socketStatus:"Occupied",currentMeter:42.15+5*Math.sin(new Date().getTime()/1e4),powerOutput:68.4+2*Math.random()},{id:"station-bkk-003",name:"Lumphini Park Charging",lat:13.731,lng:100.541,status:"Faulted",powerLimit:"120kW",socketStatus:"Out of Service",currentMeter:12.8,powerOutput:0},{id:"station-bkk-004",name:"Bangkok Old Town Hub",lat:13.753,lng:100.493,status:"Available",powerLimit:"350kW",socketStatus:"Available",currentMeter:0,powerOutput:0},{id:"station-bkk-005",name:"Bangna Complex Ultra-Fast",lat:13.6605,lng:100.6355,status:"Charging",powerLimit:"250kW",socketStatus:"Occupied",currentMeter:125.4,powerOutput:210.5+5*Math.random()},{id:"station-bkk-006",name:"Lat Krabang Factory Charger",lat:13.724,lng:100.7485,status:"Available",powerLimit:"150kW",socketStatus:"Available",currentMeter:0,powerOutput:0},{id:"station-bkk-007",name:"Chatuchak Depot Fleet Charge",lat:13.7985,lng:100.552,status:"Charging",powerLimit:"350kW",socketStatus:"Occupied",currentMeter:312.8,powerOutput:335.2+4*Math.random()},{id:"station-bkk-008",name:"Sukhumvit Distro Station",lat:13.7275,lng:100.569,status:"Reserved",powerLimit:"75kW",socketStatus:"Reserved",currentMeter:0,powerOutput:0},{id:"station-bkk-009",name:"Don Mueang Airport Terminal",lat:13.9126,lng:100.5967,status:"Charging",powerLimit:"120kW",socketStatus:"Occupied",currentMeter:84.1,powerOutput:110.4+3*Math.random()},{id:"station-bkk-010",name:"Mega Bangna Supercharger",lat:13.6468,lng:100.6797,status:"Faulted",powerLimit:"350kW",socketStatus:"Out of Service",currentMeter:45.2,powerOutput:0}]}e.s(["getBaseStations",()=>t])},62061,e=>e.a(async(t,a)=>{try{var r=e.i(65198),s=e.i(24399),n=t([r]);[r]=n.then?(await n)():n;let o=process.env.DATABASE_URL||"postgresql://postgres:Qq1150++@140.150.152.166/postgres?sslmode=disable",l=new r.Pool({connectionString:o,max:10,idleTimeoutMillis:3e4,connectionTimeoutMillis:5e3}),u=!1;async function i(){if(u)return;let e=await l.connect();try{await e.query("BEGIN"),await e.query(`
+      CREATE TABLE IF NOT EXISTS trucks (
+        id VARCHAR(100) PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        driver_name VARCHAR(100),
+        status VARCHAR(50) DEFAULT 'En Route',
+        lat DOUBLE PRECISION NOT NULL,
+        lng DOUBLE PRECISION NOT NULL,
+        last_seen TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        data JSONB NOT NULL DEFAULT '{}'::jsonb,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `),await e.query(`
+      CREATE TABLE IF NOT EXISTS telemetry_history (
+        id SERIAL PRIMARY KEY,
+        truck_id VARCHAR(100) NOT NULL REFERENCES trucks(id) ON DELETE CASCADE,
+        timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        lat DOUBLE PRECISION NOT NULL,
+        lng DOUBLE PRECISION NOT NULL,
+        speed DOUBLE PRECISION NOT NULL,
+        data JSONB NOT NULL DEFAULT '{}'::jsonb
+      );
+    `),await e.query(`
+      CREATE TABLE IF NOT EXISTS logs (
+        id SERIAL PRIMARY KEY,
+        timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        type VARCHAR(50) NOT NULL,
+        level VARCHAR(50) NOT NULL,
+        message TEXT NOT NULL,
+        metadata JSONB NOT NULL DEFAULT '{}'::jsonb
+      );
+    `),await e.query(`
+      CREATE TABLE IF NOT EXISTS stations (
+        id VARCHAR(100) PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        lat DOUBLE PRECISION NOT NULL,
+        lng DOUBLE PRECISION NOT NULL,
+        status VARCHAR(50) DEFAULT 'Available',
+        power_limit VARCHAR(50) DEFAULT '150kW',
+        socket_status VARCHAR(50) DEFAULT 'Available',
+        current_meter DOUBLE PRECISION DEFAULT 0.0,
+        power_output DOUBLE PRECISION DEFAULT 0.0,
+        schedule JSONB DEFAULT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `),await e.query(`
+      CREATE TABLE IF NOT EXISTS routes (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        truck_id VARCHAR(100) REFERENCES trucks(id) ON DELETE SET NULL,
+        stations VARCHAR(100)[] NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);let t=await e.query("SELECT COUNT(*) FROM stations");if(0===parseInt(t.rows[0].count,10)){for(let t of(console.log("🌱 Seeding default charging stations into PostgreSQL..."),(0,s.getBaseStations)()))await e.query(`
+          INSERT INTO stations (id, name, lat, lng, status, power_limit, socket_status, current_meter, power_output)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        `,[t.id,t.name,t.lat,t.lng,t.status,t.powerLimit,t.socketStatus,t.currentMeter,t.powerOutput]);console.log("🌱 Default charging stations seeded successfully!")}await e.query(`
+      CREATE INDEX IF NOT EXISTS idx_telemetry_history_truck_ts ON telemetry_history(truck_id, timestamp DESC);
+      CREATE INDEX IF NOT EXISTS idx_logs_ts ON logs(timestamp DESC);
+    `),await e.query("COMMIT"),u=!0,console.log("✅ PostgreSQL Database Initialized Successfully!")}catch(t){throw await e.query("ROLLBACK"),console.error("❌ Failed to initialize PostgreSQL Database:",t),t}finally{e.release()}}e.s(["initDb",()=>i,"pool",0,l,"query",0,(e,t)=>l.query(e,t)]),a()}catch(e){a(e)}},!1),99518,e=>e.a(async(t,a)=>{try{var r=e.i(62061),s=t([r]);[r]=s.then?(await s)():s,e.s(["logStore",0,{getLogs:async()=>{await (0,r.initDb)();try{let{rows:e}=await r.pool.query(`
+        SELECT id, timestamp, type, level, message, metadata AS details 
+        FROM logs 
+        ORDER BY timestamp DESC 
+        LIMIT 200
+      `);return e.map(e=>({id:String(e.id),timestamp:new Date(e.timestamp).toISOString(),type:e.type,level:e.level,message:e.message,details:e.details}))}catch(e){return console.error("Failed to load logs from database:",e),[]}},addLog:async(e,t,a,s)=>{await (0,r.initDb)();try{await r.pool.query(`
+        INSERT INTO logs (type, level, message, metadata) 
+        VALUES ($1, $2, $3, $4)
+      `,[e,t,a,s||{}]),await r.pool.query(`
+        DELETE FROM logs 
+        WHERE timestamp < NOW() - INTERVAL '90 days'
+      `)}catch(e){console.error("Failed to add log to database:",e)}},clearLogs:async()=>{await (0,r.initDb)();try{await r.pool.query("TRUNCATE TABLE logs")}catch(e){console.error("Failed to clear logs in database:",e)}}}]),a()}catch(e){a(e)}},!1),54495,e=>e.a(async(t,a)=>{try{var r=e.i(23480),s=e.i(75296),n=e.i(99518),i=e.i(62061),o=t([s,n,i]);async function l(){let e=new Date,t=await s.fleetStore.getTrucks();return await n.logStore.addLog("HTTP","DEBUG",`GET /api/fleet - Fetched telemetry for ${t.length} trucks`,{truckCount:t.length,timestamp:e.toISOString(),truckDetails:t.map(e=>({id:e.id,name:e.name,status:e.status,speed:e.speed,lat:e.lat,lng:e.lng}))}),r.NextResponse.json(t)}async function u(e){try{let{id:t,name:a,driverName:s,status:o,lat:l,lng:u}=await e.json();if(!t||!a||void 0===l||void 0===u)return r.NextResponse.json({error:"Missing required fields (id, name, lat, lng)"},{status:400});let d=t.trim().toLowerCase().replace(/\s+/g,"-"),c=(await (0,i.query)(`
+      INSERT INTO trucks (id, name, driver_name, status, lat, lng, last_seen, data)
+      VALUES ($1, $2, $3, $4, $5, $6, NOW(), '{}'::jsonb)
+      RETURNING *
+    `,[d,a,s||null,o||"Idle",parseFloat(l),parseFloat(u)])).rows[0];return await n.logStore.addLog("HTTP","INFO",`Created EV Truck '${a}' (${d})`),r.NextResponse.json(c)}catch(e){if("23505"===e.code)return r.NextResponse.json({error:"Truck ID already exists"},{status:400});return r.NextResponse.json({error:e.message},{status:500})}}async function d(e){try{let{id:t,name:a,driverName:s,status:o,lat:l,lng:u}=await e.json();if(!t||!a||void 0===l||void 0===u)return r.NextResponse.json({error:"Missing required fields (id, name, lat, lng)"},{status:400});let d=await (0,i.query)(`
+      UPDATE trucks 
+      SET name = $1, driver_name = $2, status = $3, lat = $4, lng = $5, updated_at = NOW() 
+      WHERE id = $6 
+      RETURNING *
+    `,[a,s||null,o||"Idle",parseFloat(l),parseFloat(u),t]);if(0===d.rows.length)return r.NextResponse.json({error:"Truck not found"},{status:404});let c=d.rows[0];return await n.logStore.addLog("HTTP","INFO",`Updated EV Truck '${a}' details (${t})`),r.NextResponse.json(c)}catch(e){return r.NextResponse.json({error:e.message},{status:500})}}async function c(e){try{let{searchParams:t}=new URL(e.url),a=t.get("id");if(!a)return r.NextResponse.json({error:"Missing truck ID"},{status:400});await (0,i.query)("BEGIN"),await (0,i.query)("UPDATE routes SET truck_id = NULL WHERE truck_id = $1",[a]),await (0,i.query)("DELETE FROM telemetry_history WHERE truck_id = $1",[a]);let s=await (0,i.query)("DELETE FROM trucks WHERE id = $1 RETURNING *",[a]);if(0===s.rows.length)return await (0,i.query)("ROLLBACK"),r.NextResponse.json({error:"Truck not found"},{status:404});let o=s.rows[0];return await (0,i.query)("COMMIT"),await n.logStore.addLog("HTTP","INFO",`Deleted EV Truck ID ${a} (${o.name})`),r.NextResponse.json({success:!0,deletedTruck:o})}catch(e){return await (0,i.query)("ROLLBACK"),r.NextResponse.json({error:e.message},{status:500})}}[s,n,i]=o.then?(await o)():o,e.s(["DELETE",()=>c,"GET",()=>l,"POST",()=>u,"PUT",()=>d]),a()}catch(e){a(e)}},!1),29787,e=>e.a(async(t,a)=>{try{var r=e.i(98490),s=e.i(18006),n=e.i(95912),i=e.i(72560),o=e.i(76852),l=e.i(38533),u=e.i(55822),d=e.i(54068),c=e.i(66843),p=e.i(99385),E=e.i(3050),T=e.i(75293),R=e.i(2144),g=e.i(33599),N=e.i(36497),A=e.i(93695);e.i(79178);var m=e.i(96717),L=e.i(54495),O=t([L]);[L]=O.then?(await O)():O;let I=new r.AppRouteRouteModule({definition:{kind:s.RouteKind.APP_ROUTE,page:"/api/fleet/route",pathname:"/api/fleet",filename:"route",bundlePath:""},distDir:".next",relativeProjectDir:"",resolvedPagePath:"[project]/web/src/app/api/fleet/route.ts",nextConfigOutput:"standalone",userland:L}),{workAsyncStorage:h,workUnitAsyncStorage:y,serverHooks:C}=I;function w(){return(0,n.patchFetch)({workAsyncStorage:h,workUnitAsyncStorage:y})}async function S(e,t,a){I.isDev&&(0,i.addRequestMeta)(e,"devRequestTimingInternalsEnd",process.hrtime.bigint());let r="/api/fleet/route";r=r.replace(/\/index$/,"")||"/";let n=await I.prepare(e,t,{srcPage:r,multiZoneDraftMode:!1});if(!n)return t.statusCode=400,t.end("Bad Request"),null==a.waitUntil||a.waitUntil.call(a,Promise.resolve()),null;let{buildId:L,params:O,nextConfig:w,parsedUrl:S,isDraftMode:h,prerenderManifest:y,routerServerContext:C,isOnDemandRevalidate:k,revalidateOnlyGenerated:M,resolvedPathname:U,clientReferenceManifest:x,serverActionsManifest:v}=n,f=(0,u.normalizeAppPath)(r),D=!!(y.dynamicRoutes[f]||y.routes[U]),P=async()=>((null==C?void 0:C.render404)?await C.render404(e,t,S,!1):t.end("This page could not be found"),null);if(D&&!h){let e=!!y.routes[U],t=y.dynamicRoutes[f];if(t&&!1===t.fallback&&!e){if(w.experimental.adapterPath)return await P();throw new A.NoFallbackError}}let b=null;!D||I.isDev||h||(b=U,b="/index"===b?"/":b);let _=!0===I.isDev||!D,F=D&&!_;v&&x&&(0,l.setManifestsSingleton)({page:r,clientReferenceManifest:x,serverActionsManifest:v});let q=e.method||"GET",H=(0,o.getTracer)(),$=H.getActiveScopeSpan(),B={params:O,prerenderManifest:y,renderOpts:{experimental:{authInterrupts:!!w.experimental.authInterrupts},cacheComponents:!!w.cacheComponents,supportsDynamicResponse:_,incrementalCache:(0,i.getRequestMeta)(e,"incrementalCache"),cacheLifeProfiles:w.cacheLife,waitUntil:a.waitUntil,onClose:e=>{t.on("close",e)},onAfterTaskError:void 0,onInstrumentationRequestError:(t,a,r,s)=>I.onRequestError(e,t,r,s,C)},sharedContext:{buildId:L}},j=new d.NodeNextRequest(e),W=new d.NodeNextResponse(t),V=c.NextRequestAdapter.fromNodeNextRequest(j,(0,c.signalFromNodeResponse)(t));try{let n=async e=>I.handle(V,B).finally(()=>{if(!e)return;e.setAttributes({"http.status_code":t.statusCode,"next.rsc":!1});let a=H.getRootSpanAttributes();if(!a)return;if(a.get("next.span_type")!==p.BaseServerSpan.handleRequest)return void console.warn(`Unexpected root span type '${a.get("next.span_type")}'. Please report this Next.js issue https://github.com/vercel/next.js`);let s=a.get("next.route");if(s){let t=`${q} ${s}`;e.setAttributes({"next.route":s,"http.route":s,"next.span_name":t}),e.updateName(t)}else e.updateName(`${q} ${r}`)}),l=!!(0,i.getRequestMeta)(e,"minimalMode"),u=async i=>{var o,u;let d=async({previousCacheEntry:s})=>{try{if(!l&&k&&M&&!s)return t.statusCode=404,t.setHeader("x-nextjs-cache","REVALIDATED"),t.end("This page could not be found"),null;let r=await n(i);e.fetchMetrics=B.renderOpts.fetchMetrics;let o=B.renderOpts.pendingWaitUntil;o&&a.waitUntil&&(a.waitUntil(o),o=void 0);let u=B.renderOpts.collectedTags;if(!D)return await (0,T.sendResponse)(j,W,r,B.renderOpts.pendingWaitUntil),null;{let e=await r.blob(),t=(0,R.toNodeOutgoingHttpHeaders)(r.headers);u&&(t[N.NEXT_CACHE_TAGS_HEADER]=u),!t["content-type"]&&e.type&&(t["content-type"]=e.type);let a=void 0!==B.renderOpts.collectedRevalidate&&!(B.renderOpts.collectedRevalidate>=N.INFINITE_CACHE)&&B.renderOpts.collectedRevalidate,s=void 0===B.renderOpts.collectedExpire||B.renderOpts.collectedExpire>=N.INFINITE_CACHE?void 0:B.renderOpts.collectedExpire;return{value:{kind:m.CachedRouteKind.APP_ROUTE,status:r.status,body:Buffer.from(await e.arrayBuffer()),headers:t},cacheControl:{revalidate:a,expire:s}}}}catch(t){throw(null==s?void 0:s.isStale)&&await I.onRequestError(e,t,{routerKind:"App Router",routePath:r,routeType:"route",revalidateReason:(0,E.getRevalidateReason)({isStaticGeneration:F,isOnDemandRevalidate:k})},!1,C),t}},c=await I.handleResponse({req:e,nextConfig:w,cacheKey:b,routeKind:s.RouteKind.APP_ROUTE,isFallback:!1,prerenderManifest:y,isRoutePPREnabled:!1,isOnDemandRevalidate:k,revalidateOnlyGenerated:M,responseGenerator:d,waitUntil:a.waitUntil,isMinimalMode:l});if(!D)return null;if((null==c||null==(o=c.value)?void 0:o.kind)!==m.CachedRouteKind.APP_ROUTE)throw Object.defineProperty(Error(`Invariant: app-route received invalid cache entry ${null==c||null==(u=c.value)?void 0:u.kind}`),"__NEXT_ERROR_CODE",{value:"E701",enumerable:!1,configurable:!0});l||t.setHeader("x-nextjs-cache",k?"REVALIDATED":c.isMiss?"MISS":c.isStale?"STALE":"HIT"),h&&t.setHeader("Cache-Control","private, no-cache, no-store, max-age=0, must-revalidate");let p=(0,R.fromNodeOutgoingHttpHeaders)(c.value.headers);return l&&D||p.delete(N.NEXT_CACHE_TAGS_HEADER),!c.cacheControl||t.getHeader("Cache-Control")||p.get("Cache-Control")||p.set("Cache-Control",(0,g.getCacheControlHeader)(c.cacheControl)),await (0,T.sendResponse)(j,W,new Response(c.value.body,{headers:p,status:c.value.status||200})),null};$?await u($):await H.withPropagatedContext(e.headers,()=>H.trace(p.BaseServerSpan.handleRequest,{spanName:`${q} ${r}`,kind:o.SpanKind.SERVER,attributes:{"http.method":q,"http.target":e.url}},u))}catch(t){if(t instanceof A.NoFallbackError||await I.onRequestError(e,t,{routerKind:"App Router",routePath:f,routeType:"route",revalidateReason:(0,E.getRevalidateReason)({isStaticGeneration:F,isOnDemandRevalidate:k})},!1,C),D)throw t;return await (0,T.sendResponse)(j,W,new Response(null,{status:500})),null}}e.s(["handler",()=>S,"patchFetch",()=>w,"routeModule",()=>I,"serverHooks",()=>C,"workAsyncStorage",()=>h,"workUnitAsyncStorage",()=>y]),a()}catch(e){a(e)}},!1)];
+
+//# sourceMappingURL=%5Broot-of-the-server%5D__a0b1a83f._.js.map

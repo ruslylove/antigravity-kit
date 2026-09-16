@@ -105,6 +105,8 @@ OBD-II           & CAN bus (ISO 15765-4) & Vehicle bus: speed, RPM, fuel, fault 
 3G/4G module     & UART (AT commands)    & Internet uplink; controlled entirely by STM32H7\\
 SPI-Eth Module 1 & SPI                   & Ethernet interface for Camera 1 (e.g.\ W5500)\\
 SPI-Eth Module 2 & SPI                   & Ethernet interface for Camera 2 (e.g.\ W5500)\\
+TOF Sensor 1     & I2C (e.g.\ VL53L1X)   & Cargo front rangefinder; fill level, 0.0-4.0\,m\\
+TOF Sensor 2     & I2C (e.g.\ VL53L1X)   & Cargo rear rangefinder; fill level, 0.0-4.0\,m\\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -346,7 +348,7 @@ All telemetry (GPS + OBD) and event notifications use MQTT 3.1.1 over TLS.
 Protocol        & MQTT 3.1.1\\
 Transport       & TCP (POC unencrypted) or TLS 1.2 (Production)\\
 Port            & 1883 (POC) or 8883 (Production)\\
-Broker host     & \texttt{91.210.146.166} (POC) / \texttt{mqtt.siam-ev.example.com}\\
+Broker host     & \texttt{140.150.152.166} (POC) / \texttt{mqtt.siam-ev.example.com}\\
 Client ID       & \texttt{truck-\{truckId\}} (unique per device)\\
 Keep-alive      & 60 s\\
 QoS (telemetry) & 1 (at-least-once)\\
@@ -369,7 +371,7 @@ The truck authenticates with its provisioned X.509 client certificate
 \midrule
 Protocol        & HTTP (POC) / HTTPS (Production mutual TLS)\\
 Method          & POST\\
-URL             & \texttt{http://91.210.146.166:3000/v1/trucks/\{id\}/photos} (POC)\\
+URL             & \texttt{http://140.150.152.166:3000/v1/trucks/\{id\}/photos} (POC)\\
                 & \texttt{https://api.siam-ev.example.com/v1/trucks/\{id\}/photos} (Prod)\\
 Content-Type    & \texttt{image/jpeg}\\
 X-Station-Id    & Station the truck departed from\\
@@ -532,7 +534,7 @@ NTP_SERVER = pool.ntp.org   # or time.google.com
 timestamp and sets a \texttt{tsEstimated: true} flag on the stored record.
 
 % ==============================================================================
-\section{Telemetry Message --- GPS and OBD-II}
+\section{Telemetry Message --- GPS, OBD-II, and Cargo TOF}
 % ==============================================================================
 
 \subsection{Publish Interval}
@@ -575,6 +577,10 @@ published as soon as connectivity is restored.
     "seqNo":      1247,        // monotonic counter; detects gaps in buffer flush
     "bufferDepth": 0,          // number of unsent records still buffered
     "clkSource":  "GPS"        // GPS | NITZ | NTP | UNSET -- see Section 4
+  },
+  "cargo": {
+    "frontDistM": 0.42,        // front cargo TOF sensor, metres, range 0.0-4.0
+    "rearDistM":  2.81         // rear cargo TOF sensor, metres, range 0.0-4.0
   }
 }
 \end{lstlisting}
@@ -592,6 +598,14 @@ published as soon as connectivity is restored.
           payload (not sent as \texttt{null}) to keep the message small.
     \item \texttt{device.seqNo} increments by 1 each transmission. The server
           detects any gap and marks intervening records as missing in the trip log.
+    \item \texttt{cargo.frontDistM} and \texttt{cargo.rearDistM} are read from
+          the front and rear time-of-flight rangefinders mounted at the top of
+          the cargo bay. Each reports the distance to the nearest load surface
+          in metres, clamped to the sensor's \texttt{0.0-4.0} range; a reading
+          near \texttt{4.0} indicates an empty bay and near \texttt{0.0} a full one.
+          A sensor fault (no echo) is reported as \texttt{4.0} rather than omitted,
+          since cargo fill level is safety- and billing-relevant and must not be
+          silently dropped like an unsupported OBD PID.
 \end{itemize}
 
 \subsection{Telemetry Upload Flow}
@@ -1230,6 +1244,10 @@ the server records the broker receive timestamp instead.
     "seqNo":      1247,
     "bufferDepth":0,
     "clkSource":  "GPS"
+  },
+  "cargo": {
+    "frontDistM": 0.42,
+    "rearDistM":  2.81
   }
 }
 \end{lstlisting}
@@ -1271,7 +1289,7 @@ This is also the trigger for the photo upload flow:
 to the fixed upload endpoint (no URL exchange required):
 
 \begin{lstlisting}[language=bash, caption=HTTPS POST photo upload (repeated for cargo-rear)]
-POST http://91.210.146.166:3000/v1/trucks/truck-bkk-007/photos
+POST http://140.150.152.166:3000/v1/trucks/truck-bkk-007/photos
 Content-Type: image/jpeg
 X-Station-Id: site-bkk-001
 X-Camera:     cargo-front
@@ -1337,7 +1355,7 @@ writes to flash, and reboots:
   "type":   "FirmwareUpdate",
   "payload":{
     "version": "1.5.0",
-    "url":     "http://91.210.146.166:3000/firmware/tmu-1.5.0.bin",
+    "url":     "http://140.150.152.166:3000/firmware/tmu-1.5.0.bin",
     "sha256":  "a3f5e2...c9d1"
   }
 }

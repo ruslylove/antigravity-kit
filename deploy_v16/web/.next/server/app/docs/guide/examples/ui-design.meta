@@ -1,0 +1,18 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/docs/layout,_N_T_/docs/guide/layout,_N_T_/docs/guide/examples/layout,_N_T_/docs/guide/examples/ui-design/layout,_N_T_/docs/guide/examples/ui-design/page,_N_T_/docs/guide/examples/ui-design"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/docs/guide/examples/ui-design/__PAGE__",
+    "/docs/guide/examples/ui-design",
+    "/docs/guide/examples",
+    "/docs/guide",
+    "/docs",
+    "/_index",
+    "/_head"
+  ]
+}
